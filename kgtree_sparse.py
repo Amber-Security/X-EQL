@@ -1,7 +1,7 @@
 from typing import List, Dict, Tuple, Set
 from uuid import uuid4
 
-from eql_ast import EQLRule
+from rule import EQLRule
 
 
 class Event:
@@ -320,7 +320,7 @@ if __name__ == "__main__":
             [tag2] by (f1, f2):g, (f3):g2, (f5):g3
             [tag3] by (f2, f1):g, (f3, f4):g1, (f5):g3
     '''
-    from eql_ast import Parser
+    from rule import Parser
     parser = Parser()
     rule = parser.parse(xeql=test_rule)
     engine = Engine()
