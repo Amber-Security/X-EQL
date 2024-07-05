@@ -1,23 +1,23 @@
 name: Create Release  
-  
+
 on:  
-  push:  
+  release:  
     tags:  
-      - 'v*'  
-  
+      - 'v*'
+
 jobs:  
-  build:  
+  build:
     runs-on: ubuntu-latest  
-    steps:  
+    steps:
       - uses: actions/checkout@v2  
       - name: Zip release  
         run: zip -r package.zip src/*
       - name: Create Release  
         id: create_release  
         uses: actions/create-release@v1  
-        env:  
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
-        with:  
+        with:
           tag_name: ${{ github.ref }}  
           release_name: Release ${{ github.ref }}  
           draft: false  
