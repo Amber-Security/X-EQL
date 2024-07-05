@@ -1,8 +1,7 @@
 # X-EQL: Cross Events Query Language
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![organization](https://img.shields.io/badge/organization-AmberSecurity-yellow.svg)](https://github.com/Amber-Security)
-
-[📖 **·** X-EQL Chinese Doduments](./README.zh-cn.md)
+[![zh-cn-document](https://img.shields.io/badge/document-Chinese_version-green.svg)](./README.zh-cn.md)
 
 ## What is X-EQL
 
