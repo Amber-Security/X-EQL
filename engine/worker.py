@@ -1,54 +1,9 @@
-from typing import List, Dict, Tuple, Set
+from typing import List, Dict, Tuple
 from uuid import uuid4
 
-from rule import EQLRule
-
-
-class Event:
-    def __init__(self, eid, raw_event, kg_inc_map):
-        self.eid = eid
-        self.raw_event = raw_event
-        self.kg_inc_map:Dict[str, Tuple] = kg_inc_map
-        self.kg_inc:Dict[str, Tuple] = {}
-        self.gen_kg_inc()
-
-    def gen_kg_inc(self):
-        for group_id in self.kg_inc_map:
-            fields = self.kg_inc_map[group_id]
-            fields_values = tuple([self.raw_event[name] for name in fields])
-            self.kg_inc[group_id] = fields_values
-
-
-class KGTreeNode:
-    def __init__(self, eid):
-        self.eid = eid
-        self.children:Set[KGTreeNode] = set()
-        self.parent:KGTreeNode = None
-        self.last_ts = -1
-        self.leaves:Set[KGTreeNode] = set()
-    
-    def kill(self):
-        assert len(self.children) == 0
-        if self.parent is not None:
-            self.parent.children.remove(self)
-            self.parent = None
-
-    def set_last_ts(self, ts):
-        if self.last_ts < ts:
-            self.last_ts = ts
-
-    def set_leaf(self, leaf):
-        leaf:KGTreeNode = leaf
-        self.leaves.add(leaf)
-        if leaf.parent in self.leaves:
-            self.leaves.remove(leaf.parent)
-
-    def add_child(self, node):
-        self.children.add(node)
-        node.set_parent(node=self)
-
-    def set_parent(self, node):
-        self.parent= node
+from rule.rule import EQLRule
+from .event import Event
+from .kgtree import KGTreeNode
 
 
 class Worker:
@@ -271,79 +226,3 @@ class Worker:
                 self.last_ts_cache = None
             results += results_collected
         return results
-
-
-class Engine:
-    def __init__(self) -> None:
-        # For results caching, fetch by application layer with Engine.fetch_results()
-        self.results_cached_buffer = []
-        # One worker is a engine instance correspondinng one rule
-        self.workers:List[Worker] = []
-        # Record some tag should be checked by which rules(workers). The int-item is worker_ind
-        self.tag_index:Dict[str, set[int]] = {}
-
-    def add_eql_rule(self, rule:EQLRule):
-        # add worker
-        worker = Worker(rule=rule, rulename=rule.ruleid)
-        self.workers.append(worker)
-        # add tag2worker index
-        worker_ind = len(self.workers) - 1
-        for tag_node in rule.tag_nodes:
-            tag_id = tag_node.tag_rule.id
-            if tag_id not in self.tag_index: self.tag_index[tag_id] = set()
-            self.tag_index[tag_id].add(worker_ind)
-
-    def fetch_results(self):
-        # will clean the cached results
-        results = self.results_cached_buffer
-        self.results_cached_buffer = []
-        return results
-
-    def process_event(self, event):
-        tag_id = event["x-eql-tag"]
-        for worker_ind in self.tag_index[tag_id]:
-            worker = self.workers[worker_ind]
-            results = worker.process_event(event=event)
-            worker.prune(event_time=event["time"])
-            if results != []:
-                if worker.rule.sparse:
-                    for result in results:
-                        self.results_cached_buffer.append({"rulename": worker.rulename, "output": result})
-                else:
-                    pass
-
-
-if __name__ == "__main__":
-    test_rule = '''
-        test_rule: sparse sequence by pid
-            [tag1] by (f4, f5):g, (f1, f2):g1, (f3):g2
-            [tag2] by (f1, f2):g, (f3):g2, (f5):g3
-            [tag3] by (f2, f1):g, (f3, f4):g1, (f5):g3
-    '''
-    from rule import Parser
-    parser = Parser()
-    rule = parser.parse(xeql=test_rule)
-    engine = Engine()
-    engine.add_eql_rule(rule=rule)
-
-    test_events_without_noise = [
-        {"x-eql-tag": "tag1", "pid": 111, "f1": "a", "f2": "b", "f3": "c", "f4": "d", "f5": "e", "time": 1},
-        {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 10},
-        {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "y", "time": 11},
-        {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 12},
-        {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 20},
-        {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "x", "time": 21},
-        {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 22},
-    ]
-
-    # test_events_without_noise = [
-    #     {"x-eql-tag": "tag1", "pid": 111, "f1": "a", "f2": "b", "f3": "c", "f4": "d", "f5": "e", "time": 1},
-    #     {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 10},
-    #     {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 11},
-    #     {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "x", "time": 21},
-    # ]
-
-    for event in test_events_without_noise:
-        engine.process_event(event=event)
-    for r in engine.fetch_results():
-        print([(r['x-eql-tag'], r['time']) for r in r['output']])
