@@ -4,11 +4,81 @@
 
 从流式的事件输入中查询符合数据特征约束的一个事件序列
 
-## For Developer
+## 用法
+
+**引擎整体被封装为两个python的包：engine和rule**
+
+### 规则开发
+
+#### XEQL语法
+
+> 待补充
+
+#### 规则编译
+
+```Python
+from rule.parser import Parser
+
+parser = Parser()
+ast = parser.parse(rule="# content of the x-eql rule")
+
+parser.dump(ast, "rule_xxx.json")
+```
+
+#### 规则加载
+
+```Python
+import json
+from rule.rule import load_rule
+
+with open("rule_xxx.json", "r", encoding="utf-8") as file:
+    ast = json.load(file)
+
+rule = load_rule(ast)
+```
+
+### 引擎运行
+
+#### 添加规则
+
+```Python
+# ...
+# rule = load_rule(ast)
+
+from engine.engine import Engine
+
+engine = Engine()
+engine.add_eql_rule(rule=rule)
+```
+
+#### 事件输入
+
+```Python
+test_events_without_noise = [
+    {"x-eql-tag": "tag1", "pid": 111, "f1": "a", "f2": "b", "f3": "c", "f4": "d", "f5": "e", "time": 1},
+    {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 10},
+    {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "y", "time": 11},
+    {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 12},
+    {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 20},
+    {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "x", "time": 21},
+    {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 22},
+]
+
+for event in test_events_without_noise:
+    engine.process_event(event=event)
+```
+
+#### 结果读取
+
+```Python
+engine.fetch_results()
+```
+
+## 开发者手册
 
 ### 各模块理解
 
-#### 目录结构
+#### src目录结构
 
 ```
 ·-+-· rule
@@ -21,6 +91,10 @@
        +-· kgtree.py  → kgtree维护规则匹配的全部状态
        +-· event.py   → 输入单事件的数据抽象
 ```
+
+#### 各模块工作流
+
+![workflow](./doc/workflow.png)
 
 ### 算法理解
 
