@@ -13,7 +13,7 @@ X-EQL is a streaming events query engine, which queries an event sequence from t
 
 ### Rule development
 
-#### XEQL syntax
+#### X-EQL syntax
 
 > TBD
 
