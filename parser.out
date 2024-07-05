@@ -1,0 +1,361 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> rule
+Rule 1     rule -> head seq
+Rule 2     head -> SYM COLON SPARSE SEQUENCE
+Rule 3     head -> SYM COLON SPARSE SEQUENCE commonkeys
+Rule 4     head -> SYM COLON DENSE SEQUENCE
+Rule 5     head -> SYM COLON DENSE SEQUENCE commonkeys
+Rule 6     commonkeys -> BY farr
+Rule 7     farr -> farr COMMA SYM
+Rule 8     farr -> SYM
+Rule 9     seq -> seq event
+Rule 10    seq -> event
+Rule 11    event -> AL SYM AR BY constraint
+Rule 12    event -> AL SYM AR
+Rule 13    constraint -> constraint COMMA L farr R COLON SYM
+Rule 14    constraint -> L farr R COLON SYM
+
+Terminals, with rules where they appear
+
+AL                   : 11 12
+AR                   : 11 12
+BY                   : 6 11
+COLON                : 2 3 4 5 13 14
+COMMA                : 7 13
+DENSE                : 4 5
+L                    : 13 14
+R                    : 13 14
+SEQUENCE             : 2 3 4 5
+SPARSE               : 2 3
+SYM                  : 2 3 4 5 7 8 11 12 13 14
+error                : 
+
+Nonterminals, with rules where they appear
+
+commonkeys           : 3 5
+constraint           : 11 13
+event                : 9 10
+farr                 : 6 7 13 14
+head                 : 1
+rule                 : 0
+seq                  : 1 9
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . rule
+    (1) rule -> . head seq
+    (2) head -> . SYM COLON SPARSE SEQUENCE
+    (3) head -> . SYM COLON SPARSE SEQUENCE commonkeys
+    (4) head -> . SYM COLON DENSE SEQUENCE
+    (5) head -> . SYM COLON DENSE SEQUENCE commonkeys
+
+    SYM             shift and go to state 3
+
+    rule                           shift and go to state 1
+    head                           shift and go to state 2
+
+state 1
+
+    (0) S' -> rule .
+
+
+
+state 2
+
+    (1) rule -> head . seq
+    (9) seq -> . seq event
+    (10) seq -> . event
+    (11) event -> . AL SYM AR BY constraint
+    (12) event -> . AL SYM AR
+
+    AL              shift and go to state 6
+
+    seq                            shift and go to state 4
+    event                          shift and go to state 5
+
+state 3
+
+    (2) head -> SYM . COLON SPARSE SEQUENCE
+    (3) head -> SYM . COLON SPARSE SEQUENCE commonkeys
+    (4) head -> SYM . COLON DENSE SEQUENCE
+    (5) head -> SYM . COLON DENSE SEQUENCE commonkeys
+
+    COLON           shift and go to state 7
+
+
+state 4
+
+    (1) rule -> head seq .
+    (9) seq -> seq . event
+    (11) event -> . AL SYM AR BY constraint
+    (12) event -> . AL SYM AR
+
+    $end            reduce using rule 1 (rule -> head seq .)
+    AL              shift and go to state 6
+
+    event                          shift and go to state 8
+
+state 5
+
+    (10) seq -> event .
+
+    AL              reduce using rule 10 (seq -> event .)
+    $end            reduce using rule 10 (seq -> event .)
+
+
+state 6
+
+    (11) event -> AL . SYM AR BY constraint
+    (12) event -> AL . SYM AR
+
+    SYM             shift and go to state 9
+
+
+state 7
+
+    (2) head -> SYM COLON . SPARSE SEQUENCE
+    (3) head -> SYM COLON . SPARSE SEQUENCE commonkeys
+    (4) head -> SYM COLON . DENSE SEQUENCE
+    (5) head -> SYM COLON . DENSE SEQUENCE commonkeys
+
+    SPARSE          shift and go to state 10
+    DENSE           shift and go to state 11
+
+
+state 8
+
+    (9) seq -> seq event .
+
+    AL              reduce using rule 9 (seq -> seq event .)
+    $end            reduce using rule 9 (seq -> seq event .)
+
+
+state 9
+
+    (11) event -> AL SYM . AR BY constraint
+    (12) event -> AL SYM . AR
+
+    AR              shift and go to state 12
+
+
+state 10
+
+    (2) head -> SYM COLON SPARSE . SEQUENCE
+    (3) head -> SYM COLON SPARSE . SEQUENCE commonkeys
+
+    SEQUENCE        shift and go to state 13
+
+
+state 11
+
+    (4) head -> SYM COLON DENSE . SEQUENCE
+    (5) head -> SYM COLON DENSE . SEQUENCE commonkeys
+
+    SEQUENCE        shift and go to state 14
+
+
+state 12
+
+    (11) event -> AL SYM AR . BY constraint
+    (12) event -> AL SYM AR .
+
+    BY              shift and go to state 15
+    AL              reduce using rule 12 (event -> AL SYM AR .)
+    $end            reduce using rule 12 (event -> AL SYM AR .)
+
+
+state 13
+
+    (2) head -> SYM COLON SPARSE SEQUENCE .
+    (3) head -> SYM COLON SPARSE SEQUENCE . commonkeys
+    (6) commonkeys -> . BY farr
+
+    AL              reduce using rule 2 (head -> SYM COLON SPARSE SEQUENCE .)
+    BY              shift and go to state 17
+
+    commonkeys                     shift and go to state 16
+
+state 14
+
+    (4) head -> SYM COLON DENSE SEQUENCE .
+    (5) head -> SYM COLON DENSE SEQUENCE . commonkeys
+    (6) commonkeys -> . BY farr
+
+    AL              reduce using rule 4 (head -> SYM COLON DENSE SEQUENCE .)
+    BY              shift and go to state 17
+
+    commonkeys                     shift and go to state 18
+
+state 15
+
+    (11) event -> AL SYM AR BY . constraint
+    (13) constraint -> . constraint COMMA L farr R COLON SYM
+    (14) constraint -> . L farr R COLON SYM
+
+    L               shift and go to state 20
+
+    constraint                     shift and go to state 19
+
+state 16
+
+    (3) head -> SYM COLON SPARSE SEQUENCE commonkeys .
+
+    AL              reduce using rule 3 (head -> SYM COLON SPARSE SEQUENCE commonkeys .)
+
+
+state 17
+
+    (6) commonkeys -> BY . farr
+    (7) farr -> . farr COMMA SYM
+    (8) farr -> . SYM
+
+    SYM             shift and go to state 22
+
+    farr                           shift and go to state 21
+
+state 18
+
+    (5) head -> SYM COLON DENSE SEQUENCE commonkeys .
+
+    AL              reduce using rule 5 (head -> SYM COLON DENSE SEQUENCE commonkeys .)
+
+
+state 19
+
+    (11) event -> AL SYM AR BY constraint .
+    (13) constraint -> constraint . COMMA L farr R COLON SYM
+
+    AL              reduce using rule 11 (event -> AL SYM AR BY constraint .)
+    $end            reduce using rule 11 (event -> AL SYM AR BY constraint .)
+    COMMA           shift and go to state 23
+
+
+state 20
+
+    (14) constraint -> L . farr R COLON SYM
+    (7) farr -> . farr COMMA SYM
+    (8) farr -> . SYM
+
+    SYM             shift and go to state 22
+
+    farr                           shift and go to state 24
+
+state 21
+
+    (6) commonkeys -> BY farr .
+    (7) farr -> farr . COMMA SYM
+
+    AL              reduce using rule 6 (commonkeys -> BY farr .)
+    COMMA           shift and go to state 25
+
+
+state 22
+
+    (8) farr -> SYM .
+
+    COMMA           reduce using rule 8 (farr -> SYM .)
+    AL              reduce using rule 8 (farr -> SYM .)
+    R               reduce using rule 8 (farr -> SYM .)
+
+
+state 23
+
+    (13) constraint -> constraint COMMA . L farr R COLON SYM
+
+    L               shift and go to state 26
+
+
+state 24
+
+    (14) constraint -> L farr . R COLON SYM
+    (7) farr -> farr . COMMA SYM
+
+    R               shift and go to state 27
+    COMMA           shift and go to state 25
+
+
+state 25
+
+    (7) farr -> farr COMMA . SYM
+
+    SYM             shift and go to state 28
+
+
+state 26
+
+    (13) constraint -> constraint COMMA L . farr R COLON SYM
+    (7) farr -> . farr COMMA SYM
+    (8) farr -> . SYM
+
+    SYM             shift and go to state 22
+
+    farr                           shift and go to state 29
+
+state 27
+
+    (14) constraint -> L farr R . COLON SYM
+
+    COLON           shift and go to state 30
+
+
+state 28
+
+    (7) farr -> farr COMMA SYM .
+
+    COMMA           reduce using rule 7 (farr -> farr COMMA SYM .)
+    AL              reduce using rule 7 (farr -> farr COMMA SYM .)
+    R               reduce using rule 7 (farr -> farr COMMA SYM .)
+
+
+state 29
+
+    (13) constraint -> constraint COMMA L farr . R COLON SYM
+    (7) farr -> farr . COMMA SYM
+
+    R               shift and go to state 31
+    COMMA           shift and go to state 25
+
+
+state 30
+
+    (14) constraint -> L farr R COLON . SYM
+
+    SYM             shift and go to state 32
+
+
+state 31
+
+    (13) constraint -> constraint COMMA L farr R . COLON SYM
+
+    COLON           shift and go to state 33
+
+
+state 32
+
+    (14) constraint -> L farr R COLON SYM .
+
+    COMMA           reduce using rule 14 (constraint -> L farr R COLON SYM .)
+    AL              reduce using rule 14 (constraint -> L farr R COLON SYM .)
+    $end            reduce using rule 14 (constraint -> L farr R COLON SYM .)
+
+
+state 33
+
+    (13) constraint -> constraint COMMA L farr R COLON . SYM
+
+    SYM             shift and go to state 34
+
+
+state 34
+
+    (13) constraint -> constraint COMMA L farr R COLON SYM .
+
+    COMMA           reduce using rule 13 (constraint -> constraint COMMA L farr R COLON SYM .)
+    AL              reduce using rule 13 (constraint -> constraint COMMA L farr R COLON SYM .)
+    $end            reduce using rule 13 (constraint -> constraint COMMA L farr R COLON SYM .)
+
