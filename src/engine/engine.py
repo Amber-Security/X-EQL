@@ -32,6 +32,7 @@ class Engine:
 
     def process_event(self, event):
         tag_id = event["x-eql-tag"]
+        if tag_id not in self.tag_index: return
         for worker_ind in self.tag_index[tag_id]:
             worker = self.workers[worker_ind]
             results = worker.process_event(event=event)

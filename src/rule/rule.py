@@ -31,16 +31,20 @@ class EQLRule:
 def load_rule(ast):
     _, head, seq = ast
     # parse head
-    _, rule_id, mode, shape, _commonk = head
-    commonk = _commonk[1]
-    common_binder = KeyGroupBind("*", commonk)
+    if len(head) == 5:
+        _, rule_id, mode, shape, _commonk = head
+        commonk = _commonk[1]
+        common_binder = [KeyGroupBind("*", commonk)]
+    else:
+        _, rule_id, mode, shape = head
+        common_binder = []
     # parse seq
     tag_nodes = []
     for event_rule in seq:
         tid = event_rule[1]
         tagrule = TagRule(tid)
         binders = [KeyGroupBind(gid, fields) for gid, fields in event_rule[2]] if len(event_rule) == 3 else []
-        binders = [common_binder] + binders
+        binders = common_binder + binders
         tagnode = TagNode(tag_rule=tagrule, binders=binders)
         tag_nodes.append(tagnode)
     rule = EQLRule(
