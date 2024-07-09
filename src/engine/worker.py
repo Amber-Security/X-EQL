@@ -10,6 +10,15 @@ class Worker:
     def __init__(self, rule:EQLRule, rulename:str) -> None:
         self.rule:EQLRule = rule
         self.rulename:str = rulename
+        # handle tid repeated situation before initing
+        dup_nodes = {}
+        for tag_node in rule.tag_nodes:
+            if tag_node.tag_rule.id not in dup_nodes:
+                dup_nodes[tag_node.tag_rule.id] = 0
+            else:
+                dup_nodes[tag_node.tag_rule.id] += 1
+                tag_node.tag_rule.id += str(dup_nodes[tag_node.tag_rule.id])
+        # init
         self.ENTRY_TID = self.rule.tag_nodes[0].tag_rule.id
         self.FINAL_TID = self.rule.tag_nodes[-1].tag_rule.id
         self.TAGID_SEQ = [tag_node.tag_rule.id for tag_node in rule.tag_nodes]
