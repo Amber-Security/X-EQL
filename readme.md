@@ -44,7 +44,7 @@ parser.dump(ast, "rule_xxx.json")
 
 ```Python
 import json
-from rule.rule import load_rule
+from holmes_rule.rule import load_rule
 
 with open("rule_xxx.json", "r", encoding="utf-8") as file:
     ast = json.load(file)

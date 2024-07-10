@@ -1,4 +1,4 @@
-from engine.engine import Engine
+from holmes_engine.engine import Engine
 
 
 if __name__ == '__main__':
@@ -16,8 +16,8 @@ if __name__ == '__main__':
             [read_knownhost] by (sessionid):g1, (localip):g2
             [ssh_login] by (remoteip):g2
     '''
-    from rule.rule import load_rule
-    from rule.parser import Parser
+    from holmes_rule.rule import load_rule
+    from holmes_rule.parser import Parser
     parser = Parser()
     rule = load_rule(parser.parse(rule=test_rule2))
     engine = Engine()
