@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
   
 setup(  
     name='holmes',  
-    version='v1.1.0-alpha',  
+    version='v1.1.1-alpha',  
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     install_requires=[  
