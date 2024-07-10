@@ -17,7 +17,7 @@ class Worker:
                 dup_nodes[tag_node.tag_rule.id] = 0
             else:
                 dup_nodes[tag_node.tag_rule.id] += 1
-                tag_node.tag_rule.id += str(dup_nodes[tag_node.tag_rule.id])
+                tag_node.tag_rule.id += '@' + str(dup_nodes[tag_node.tag_rule.id])
         # init
         self.ENTRY_TID = self.rule.tag_nodes[0].tag_rule.id
         self.FINAL_TID = self.rule.tag_nodes[-1].tag_rule.id
@@ -32,11 +32,15 @@ class Worker:
         self.gen_kg_inc()
         self.CONJUGATE_MAP = {}
         self.gen_kg_conjugate()
-        # DYNAMIC
+        # Dynamic but persistent
         self.EID_MAP:Dict[str, Event] = {}
         self.ENTRY_POOL:List[KGTreeNode] = []
         self.last_ts_cache = None
         self.tree_dead = []
+        # Dynamic but temporary, only live during one event's processing
+        # The stack top of `tid_dyn_stack` represents the current dynamic tid of the event being processed.
+        # You must reset it after or before one event's processing!!
+        self.tid_dyn_stack = []
         # FIX
         self.default_expired = 3
         # dense/sparse mode only
@@ -108,9 +112,11 @@ class Worker:
             del self.ENTRY_POOL[dead_tree_ind]
 
     def new_event_node(self, raw_event):
+        tid_dyn = raw_event["x-eql-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
         event = Event(
             eid=str(uuid4()),
             raw_event=raw_event,
+            tid_dyn=tid_dyn,
             kg_inc_map=self.TAG2INC[raw_event["x-eql-tag"]]
         )
         self.EID_MAP[event.eid] = event
@@ -129,8 +135,8 @@ class Worker:
 
     def check_constraint(self, inspector_node:KGTreeNode, inspected_event):
         inspector_event = self.EID_MAP[inspector_node.eid]
-        inspector_tid = inspector_event.raw_event["x-eql-tag"]
-        inspected_tid = inspected_event["x-eql-tag"]
+        inspector_tid = inspector_event.tid_dyn
+        inspected_tid = inspected_event["x-eql-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
         for constraint_group_id in self.CONJUGATE_MAP[inspected_tid][inspector_tid]:
             assert constraint_group_id in self.TAG2KG[inspected_tid]
             prev_constraint = inspector_event.kg_inc[constraint_group_id]
@@ -147,54 +153,12 @@ class Worker:
             if ind_y - leaf_seq_ind <= 1: return True
         return False
 
-    # to be rechecked and remove, making a big fault here.
-    def process_reverse(self, inspected_event, root:KGTreeNode) -> List[List]:
-        results = []
-        tid_y = inspected_event["x-eql-tag"]
-        ind_y = self.TAGID2IND[tid_y]
-        new_leaves:List[KGTreeNode] = []
-        for leaf in root.leaves:
-            leaf_seq_ind = self.TAGID2IND[self.EID_MAP[leaf.eid].raw_event["x-eql-tag"]]
-            if ind_y - leaf_seq_ind != 1: continue
-            # time order check
-            if not self.check_time_order(inspector_node=leaf, inspected_event=inspected_event): continue
-            # enter check stack
-            result = []
-            check_stack:List[KGTreeNode] = []
-            ptr = leaf
-            while ptr is not None:
-                check_stack.append(ptr)
-                ptr = ptr.parent
-            while True:
-                inspector_node = check_stack.pop()
-                if not self.check_constraint(inspector_node=inspector_node, inspected_event=inspected_event): break
-                if check_stack != []: continue
-                # ALREADY IN POSITION, AND THIS IS THE END OF GAME
-                new_node = self.new_event_node(raw_event=inspected_event)
-                inspector_node.add_child(node=new_node)
-                # root.set_leaf(leaf=node)
-                new_leaves.append(new_node)
-                # UPDATE TIMESTAMP
-                self.last_ts_cache = inspected_event["time"]
-                # CHECK FINISH
-                if tid_y == self.FINAL_TID:
-                    ptr = new_node
-                    while ptr is not None:
-                        result.insert(0, self.EID_MAP[ptr.eid].raw_event)
-                        ptr = ptr.parent
-                # exit
-                break
-            if result != []: results.append(result)
-        for leaf in new_leaves:
-            root.set_leaf(leaf=leaf)
-        return results
-
     def process_dfs(self, entry:KGTreeNode, inspected_event, root:KGTreeNode) -> List[List]:
         # results
         results:List[List] = []
         # checking
-        tid_x = self.EID_MAP[entry.eid].raw_event["x-eql-tag"]
-        tid_y = inspected_event["x-eql-tag"]
+        tid_x = self.EID_MAP[entry.eid].tid_dyn
+        tid_y = inspected_event["x-eql-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
         ind_x = self.TAGID2IND[tid_x]
         ind_y = self.TAGID2IND[tid_y]
         if ind_y - ind_x == 1:
@@ -210,6 +174,17 @@ class Worker:
                 if tid_y == self.FINAL_TID:
                     return [[self.EID_MAP[entry.eid].raw_event, inspected_event]]
         else:
+            need_clean_tid_stack = False
+            if ind_y == ind_x:
+                assert tid_y == tid_x.split("@")[0]
+                tid_y += '@1' if tid_y == tid_x else '@' + str(int(tid_x.split("@")[1]) + 1)
+                # has no more chance
+                if tid_y not in self.TAGID_SET: return results
+                # update ind of y
+                ind_y = self.TAGID2IND[tid_y]
+                # push stack
+                self.tid_dyn_stack.append(tid_y)
+                need_clean_tid_stack = True
             assert ind_y > ind_x
             if self.check_constraint(inspector_node=entry, inspected_event=inspected_event):
                 for child in entry.children:
@@ -218,20 +193,20 @@ class Worker:
                         for result in results_collected:
                             result.insert(0, self.EID_MAP[entry.eid].raw_event)
                     results += results_collected
+            if need_clean_tid_stack: self.tid_dyn_stack.pop()
         return results
 
     def process_event(self, event):
         results = []
-        if event["x-eql-tag"] == self.ENTRY_TID:
-            self.new_entry(raw_event=event)
-            return []
         if event["x-eql-tag"] not in self.TAGID_SET: return
         for entry in self.ENTRY_POOL:
             if not self.precheck_has_position(inspected_event=event, root=entry): continue
             results_collected = self.process_dfs(entry=entry, inspected_event=event, root=entry)
-            # results_collected = self.process_reverse(inspected_event=event, root=entry)
             if self.last_ts_cache is not None:
                 entry.set_last_ts(ts=self.last_ts_cache)
                 self.last_ts_cache = None
             results += results_collected
+        if event["x-eql-tag"] == self.ENTRY_TID:
+            self.new_entry(raw_event=event)
+            # return []
         return results
