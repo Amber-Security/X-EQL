@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from holmes_rule.rule import EQLRule
+from holmes_rule.rule import HolmesRule
 from .worker import Worker
 
 
@@ -13,7 +13,7 @@ class Engine:
         # Record some tag should be checked by which rules(workers). The int-item is worker_ind
         self.tag_index:Dict[str, set[int]] = {}
 
-    def add_eql_rule(self, rule:EQLRule):
+    def add_holmes_rule(self, rule:HolmesRule):
         # add worker
         worker = Worker(rule=rule, rulename=rule.ruleid)
         self.workers.append(worker)
@@ -31,7 +31,7 @@ class Engine:
         return results
 
     def process_event(self, event):
-        tag_id = event["x-eql-tag"]
+        tag_id = event["holmes-tag"]
         if tag_id not in self.tag_index: return
         for worker_ind in self.tag_index[tag_id]:
             worker = self.workers[worker_ind]

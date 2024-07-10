@@ -48,8 +48,19 @@ if __name__ == '__main__':
     #     {"holmes-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 11},
     #     {"holmes-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "x", "time": 21},
     # ]
-
-    for event in test_events_without_noise2:
-        engine.process_event(event=event)
-    for r in engine.fetch_results():
-        print([(r['holmes-tag'], r['time']) for r in r['output']])
+    i = 0
+    ts = 0
+    while True:
+        i += 1
+        for event in test_events_without_noise2:
+            event["time"] += i * 61
+            engine.process_event(event=event)
+            ts += 1
+        results = engine.fetch_results()
+        if i % 10000 != 0: continue
+        print("***")
+        #print("+++", i, ts, len(engine.fetch_results()))
+        #input("pause")
+        #continue
+        for r in results:
+            print(str(i), [(r['holmes-tag'], r['time']) for r in r['output']])

@@ -1,14 +1,14 @@
 from typing import List, Dict, Tuple
 from uuid import uuid4
 
-from holmes_rule.rule import EQLRule
+from holmes_rule.rule import HolmesRule
 from .event import Event
 from .kgtree import KGTreeNode
 
 
 class Worker:
-    def __init__(self, rule:EQLRule, rulename:str) -> None:
-        self.rule:EQLRule = rule
+    def __init__(self, rule:HolmesRule, rulename:str) -> None:
+        self.rule:HolmesRule = rule
         self.rulename:str = rulename
         # handle tid repeated situation before initing
         dup_nodes = {}
@@ -93,7 +93,7 @@ class Worker:
 
     def is_dead_leaf(self, leaf:KGTreeNode, event_time):
         # the first situation only get itself death, be carefull when we reconstruct it next time.
-        # if self.EID_MAP[leaf.eid].raw_event["x-eql-tag"] == self.FINAL_TID:
+        # if self.EID_MAP[leaf.eid].raw_event["holmes-tag"] == self.FINAL_TID:
         #     return True
         if event_time - self.EID_MAP[leaf.eid].raw_event["time"] > self.expired_span:
             return True
@@ -112,12 +112,12 @@ class Worker:
             del self.ENTRY_POOL[dead_tree_ind]
 
     def new_event_node(self, raw_event):
-        tid_dyn = raw_event["x-eql-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
+        tid_dyn = raw_event["holmes-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
         event = Event(
             eid=str(uuid4()),
             raw_event=raw_event,
             tid_dyn=tid_dyn,
-            kg_inc_map=self.TAG2INC[raw_event["x-eql-tag"]]
+            kg_inc_map=self.TAG2INC[raw_event["holmes-tag"]]
         )
         self.EID_MAP[event.eid] = event
         return KGTreeNode(event.eid)
@@ -136,7 +136,7 @@ class Worker:
     def check_constraint(self, inspector_node:KGTreeNode, inspected_event):
         inspector_event = self.EID_MAP[inspector_node.eid]
         inspector_tid = inspector_event.tid_dyn
-        inspected_tid = inspected_event["x-eql-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
+        inspected_tid = inspected_event["holmes-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
         for constraint_group_id in self.CONJUGATE_MAP[inspected_tid][inspector_tid]:
             assert constraint_group_id in self.TAG2KG[inspected_tid]
             prev_constraint = inspector_event.kg_inc[constraint_group_id]
@@ -146,10 +146,10 @@ class Worker:
         return True
 
     def precheck_has_position(self, inspected_event, root:KGTreeNode):
-        tid_y = inspected_event["x-eql-tag"]
+        tid_y = inspected_event["holmes-tag"]
         ind_y = self.TAGID2IND[tid_y]
         for leaf in root.leaves:
-            leaf_seq_ind = self.TAGID2IND[self.EID_MAP[leaf.eid].raw_event["x-eql-tag"]]
+            leaf_seq_ind = self.TAGID2IND[self.EID_MAP[leaf.eid].raw_event["holmes-tag"]]
             if ind_y - leaf_seq_ind <= 1: return True
         return False
 
@@ -158,7 +158,7 @@ class Worker:
         results:List[List] = []
         # checking
         tid_x = self.EID_MAP[entry.eid].tid_dyn
-        tid_y = inspected_event["x-eql-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
+        tid_y = inspected_event["holmes-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
         ind_x = self.TAGID2IND[tid_x]
         ind_y = self.TAGID2IND[tid_y]
         if ind_y - ind_x == 1:
@@ -198,7 +198,7 @@ class Worker:
 
     def process_event(self, event):
         results = []
-        if event["x-eql-tag"] not in self.TAGID_SET: return
+        if event["holmes-tag"] not in self.TAGID_SET: return
         for entry in self.ENTRY_POOL:
             if not self.precheck_has_position(inspected_event=event, root=entry): continue
             results_collected = self.process_dfs(entry=entry, inspected_event=event, root=entry)
@@ -206,7 +206,7 @@ class Worker:
                 entry.set_last_ts(ts=self.last_ts_cache)
                 self.last_ts_cache = None
             results += results_collected
-        if event["x-eql-tag"] == self.ENTRY_TID:
+        if event["holmes-tag"] == self.ENTRY_TID:
             self.new_entry(raw_event=event)
             # return []
         return results

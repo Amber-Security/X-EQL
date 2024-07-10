@@ -1,4 +1,4 @@
-# X-EQL: Cross Events Query Language
+# Holmes: Cross Events Query Language
 [![release](https://img.shields.io/badge/Latest_release-v1.1.1_alpha-red.svg)](https://github.com/Amber-Security/X-EQL/releases/tag/v1.1.1-alpha)
 [![organization](https://img.shields.io/badge/Organization-AmberSecurity-yellow.svg)](https://github.com/Amber-Security)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
@@ -13,7 +13,7 @@
 
 ### 规则开发
 
-#### XEQL语法
+#### Holmes语法
 
 ```
 RULE_NAME: MODE sequence by FIELD1, FIELD2, ...
@@ -34,7 +34,7 @@ RULE_NAME: MODE sequence by FIELD1, FIELD2, ...
 from rule.parser import Parser
 
 parser = Parser()
-ast = parser.parse(rule="# content of the x-eql rule")
+ast = parser.parse(rule="# content of the holmes rule")
 
 parser.dump(ast, "rule_xxx.json")
 ```
@@ -62,20 +62,20 @@ rule = load_rule(ast)
 from engine.engine import Engine
 
 engine = Engine()
-engine.add_eql_rule(rule=rule)
+engine.add_holmes_rule(rule=rule)
 ```
 
 #### 事件输入
 
 ```Python
 test_events_without_noise = [
-    {"x-eql-tag": "tag1", "pid": 111, "f1": "a", "f2": "b", "f3": "c", "f4": "d", "f5": "e", "time": 1},
-    {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 10},
-    {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "y", "time": 11},
-    {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 12},
-    {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 20},
-    {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "x", "time": 21},
-    {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 22},
+    {"holmes-tag": "tag1", "pid": 111, "f1": "a", "f2": "b", "f3": "c", "f4": "d", "f5": "e", "time": 1},
+    {"holmes-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 10},
+    {"holmes-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "y", "time": 11},
+    {"holmes-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 12},
+    {"holmes-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 20},
+    {"holmes-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "x", "time": 21},
+    {"holmes-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 22},
 ]
 
 for event in test_events_without_noise:
@@ -119,14 +119,14 @@ engine.fetch_results()
   - 增量查验表 - 口令表：是增量查验表的填值实例
 - KGTreeNode
 - Engine
-  - 添加及初始化eql规则
+  - 添加及初始化holmes规则
   - 输入event处理
     - 先判断这个event都有哪些适用的worker（rule）
     - 送入worker处理
     - 处理完后prune清理状态
   - 获取规则
 - Worker
-  - 一个eql规则实例化一个worker
+  - 一个holmes规则实例化一个worker
     - 静态结构
       - 记录起始、终止事件的tid
       - 记录事件序列的tid seq、set

@@ -1,21 +1,21 @@
-# X-EQL: Cross Events Query Language
+# Holmes: Streaming Cross Events Query Engine
 
 [![release](https://img.shields.io/badge/Latest_release-v1.1.1_alpha-red.svg)](https://github.com/Amber-Security/X-EQL/releases/tag/v1.1.1-alpha)
 [![zh-cn-document](https://img.shields.io/badge/Document-Chinese_version-green.svg)](./README.zh-cn.md)
 [![organization](https://img.shields.io/badge/Organization-AmberSecurity-yellow.svg)](https://github.com/Amber-Security)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-## What is X-EQL
+## What is Holmes
 
-X-EQL is a streaming events query engine, which queries an event sequence from the streamed event input that fits the constraint of the data feature.
+Holmes is a streaming events query engine, which queries an event sequence from the streamed event input that fits the constraint of the data feature.
 
-## Usage
+## Getting Started
 
 > The whole engine is packaged into two python-package: `engine` and `rule`.
 
 ### Rule development
 
-#### X-EQL syntax
+#### Holmes syntax
 
 ```
 RULE_NAME: MODE sequence by FIELD1, FIELD2, ...
@@ -37,7 +37,7 @@ RULE_NAME: MODE sequence by FIELD1, FIELD2, ...
 from rule.parser import Parser
 
 parser = Parser()
-ast = parser.parse(rule="# content of the x-eql rule")
+ast = parser.parse(rule="# content of the Holmes rule")
 
 parser.dump(ast, "rule_xxx.json")
 ```
@@ -65,20 +65,20 @@ rule = load_rule(ast)
 from engine.engine import Engine
 
 engine = Engine()
-engine.add_eql_rule(rule=rule)
+engine.add_holmes_rule(rule=rule)
 ```
 
 #### Feed events
 
 ```Python
 test_events_without_noise = [
-    {"x-eql-tag": "tag1", "pid": 111, "f1": "a", "f2": "b", "f3": "c", "f4": "d", "f5": "e", "time": 1},
-    {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 10},
-    {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "y", "time": 11},
-    {"x-eql-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 12},
-    {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 20},
-    {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "x", "time": 21},
-    {"x-eql-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 22},
+    {"Holmes-tag": "tag1", "pid": 111, "f1": "a", "f2": "b", "f3": "c", "f4": "d", "f5": "e", "time": 1},
+    {"Holmes-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 10},
+    {"Holmes-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "y", "time": 11},
+    {"Holmes-tag": "tag2", "pid": 111, "f1": "d", "f2": "e", "f3": "c", "f4": " ", "f5": "x", "time": 12},
+    {"Holmes-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 20},
+    {"Holmes-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "x", "time": 21},
+    {"Holmes-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 22},
 ]
 
 for event in test_events_without_noise:
@@ -101,7 +101,7 @@ engine.fetch_results()
 ·-+-· rule
   |    +-· syntax.py  → YACC grammar implementation of rules
   |    +-· rule.py    → The class definition of the rule, based on which the engine understands rules; Provides an api transforming the input AST to a rule instance.
-  |    +-· parser.py  → Input the x-eql rule text, invoke the parsing-api in `syntax.py`, and return the ast of the rules
+  |    +-· parser.py  → Input the Holmes rule text, invoke the parsing-api in `syntax.py`, and return the ast of the rules
   +-- engine
        +-· engine.py  → The processing engine. Three apis provided: add rule, input events and fetch results.
        +-· worker.py  → Each rule has one worker. The worker undertakes all computing.

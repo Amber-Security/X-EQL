@@ -11,5 +11,5 @@ setup(
     author='AmberSecurity',  
     author_email='dontbuyapie@gmail.com',
     description='holmes engine',
-    url='https://github.com/Amber-Security/X-EQL',
+    url='https://github.com/Amber-Security/Holmes',
 )

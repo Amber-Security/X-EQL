@@ -19,7 +19,7 @@ class TagNode:
         self.binders:List[KeyGroupBind] = binders
 
 
-class EQLRule:
+class HolmesRule:
     def __init__(self, ruleid, shape, tag_nodes, max_span=-1, sparse=True):
         self.ruleid:str = ruleid
         self.shape:str = shape
@@ -47,7 +47,7 @@ def load_rule(ast):
         binders = common_binder + binders
         tagnode = TagNode(tag_rule=tagrule, binders=binders)
         tag_nodes.append(tagnode)
-    rule = EQLRule(
+    rule = HolmesRule(
         ruleid=rule_id,
         shape=shape,
         tag_nodes=tag_nodes,
