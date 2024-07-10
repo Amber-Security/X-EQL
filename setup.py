@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
   
 setup(  
     name='holmes',  
-    version='v1.1.1-alpha',  
+    version='v1.1.2-alpha',  
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     install_requires=[  
@@ -10,6 +10,5 @@ setup(
     ],  
     author='AmberSecurity',  
     author_email='dontbuyapie@gmail.com',
-    description='holmes engine',
-    url='https://github.com/Amber-Security/Holmes',
+    description='holmes engine'
 )
