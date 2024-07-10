@@ -55,8 +55,8 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}  
           # 假设wheel文件名是唯一的，或者您可以通过shell命令来找到它  
           # 这里以"dist/*.whl"为例，但如果有多个wheel文件，需要更精确指定  
-          asset_path: ./dist/$(ls dist/*.whl | head -n 1)  
-          asset_name: $(basename $(ls dist/*.whl | head -n 1))  
+          asset_path: $(ls dist/*.whl | head -n 1)  
+          asset_name: $(basename $(ls dist/*.whl | head -n 1))
           asset_content_type: application/zip  
   
       # 注意：asset_content_type 对于wheel文件来说应该是 application/vnd.python.package-archive  
