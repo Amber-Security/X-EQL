@@ -1,7 +1,7 @@
 from typing import List, Dict, Tuple
 from uuid import uuid4
 
-from rule.rule import EQLRule
+from holmes_rule.rule import EQLRule
 from .event import Event
 from .kgtree import KGTreeNode
 

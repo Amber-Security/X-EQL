@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from rule.rule import EQLRule
+from holmes_rule.rule import EQLRule
 from .worker import Worker
 
 
