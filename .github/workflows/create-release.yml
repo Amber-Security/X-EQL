@@ -39,6 +39,8 @@ jobs:
       - name: Get wheel filepath and name
         id: set-output
         run: |
+          echo "WHL_PATH=$(ls dist/*.whl | head -n 1)"
+          echo "WHL_NAME=$(basename $(ls dist/*.whl | head -n 1))"
           echo "WHL_PATH=$(ls dist/*.whl | head -n 1)" >> "$GITHUB_OUTPUT"
           echo "WHL_NAME=$(basename $(ls dist/*.whl | head -n 1))" >> "$GITHUB_OUTPUT"
   
@@ -63,10 +65,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
         with:  
           upload_url: ${{ steps.create_release.outputs.upload_url }}  
-          # 假设wheel文件名是唯一的，或者您可以通过shell命令来找到它  
-          # 这里以"dist/*.whl"为例，但如果有多个wheel文件，需要更精确指定  
-          asset_path: ${{ needs.build-and-release.outputs.WHL_PATH }}
-          asset_name: ${{ needs.build-and-release.outputs.WHL_NAME }}
+          asset_path: ${{ steps.set-output.outputs.WHL_PATH }}
+          asset_name: ${{ steps.set-output.outputs.WHL_NAME }}
           asset_content_type: application/zip  
   
       # 注意：asset_content_type 对于wheel文件来说应该是 application/vnd.python.package-archive  
