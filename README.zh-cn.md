@@ -1,6 +1,7 @@
 # X-EQL: Cross Events Query Language
+[![release](https://img.shields.io/badge/Latest_release-v1.1.1_alpha-red.svg)](https://github.com/Amber-Security/X-EQL/releases/tag/v1.1.1-alpha)
+[![organization](https://img.shields.io/badge/Organization-AmberSecurity-yellow.svg)](https://github.com/Amber-Security)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![organization](https://img.shields.io/badge/organization-AmberSecurity-yellow.svg)](https://github.com/Amber-Security)
 
 ## 功能
 
