@@ -11,7 +11,7 @@ Holmes is a streaming events query engine, which queries an event sequence from 
 
 ## Getting Started
 
-> The whole engine is packaged into two python-package: `engine` and `rule`.
+> The whole engine is packaged into three python-package: `holmes_engine`, `holmes_rule` and `holmes_copilot`.
 
 ### Rule development
 
@@ -34,7 +34,7 @@ RULE_NAME: MODE sequence by FIELD1, FIELD2, ...
 #### Rule compile
 
 ```Python
-from rule.parser import Parser
+from holmes_rule.parser import Parser
 
 parser = Parser()
 ast = parser.parse(rule="# content of the Holmes rule")
@@ -62,7 +62,7 @@ rule = load_rule(ast)
 # ...
 # rule = load_rule(ast)
 
-from engine.engine import Engine
+from holmes_engine.engine import Engine
 
 engine = Engine()
 engine.add_holmes_rule(rule=rule)
@@ -90,6 +90,28 @@ for event in test_events_without_noise:
 ```Python
 engine.fetch_results()
 ```
+### Copilot
+
+We provide a Copilot for automatically developing holmes rules: Input an expected events sequence, and Copilot automatically generates the holmes rule.
+
+```Python
+from holmes_copilot.copilot import Copilot
+
+test_events_without_noise = [
+    {"holmes-tag": "ssh_login", "pid": 112, "sessionid": "9876", "localip": "10.2.3.4", "remoteip": "10.2.3.9", "f4": " ", "f5": "x", "time": 10},
+    {"holmes-tag": "read_knownhost", "pid": 113, "sessionid": "9876", "localip": "10.2.3.4", "remoteip": "10.2.3.9", "f4": "-", "f5": "z", "time": 12},
+    {"holmes-tag": "ssh_login", "pid": 111, "sessionid": "3398", "localip": "10.2.3.5", "remoteip": "10.2.3.4", "f4": "b", "f5": "y", "time": 22},
+]
+rule = Copilot.generate_rule(test_events_without_noise)
+print(rule)
+```
+And you will get the output:
+```
+ssh_login_TO_read_knownhost_TO_ssh_login: sparse sequence 
+    [ssh_login] by (sessionid):g1, (localip):g2, (remoteip):g3
+    [read_knownhost] by (sessionid):g1, (localip):g2, (remoteip):g3
+    [ssh_login] by (remoteip):g2
+```
 
 ## For developer
 
@@ -103,10 +125,12 @@ engine.fetch_results()
   |    +-· rule.py    → The class definition of the rule, based on which the engine understands rules; Provides an api transforming the input AST to a rule instance.
   |    +-· parser.py  → Input the Holmes rule text, invoke the parsing-api in `syntax.py`, and return the ast of the rules
   +-- engine
-       +-· engine.py  → The processing engine. Three apis provided: add rule, input events and fetch results.
-       +-· worker.py  → Each rule has one worker. The worker undertakes all computing.
-       +-· kgtree.py  → A kgtree maintains all state of one rule's matching
-       +-· event.py   → Data abstraction of a single input event.
+  |    +-· engine.py  → The processing engine. Three apis provided: add rule, input events and fetch results.
+  |    +-· worker.py  → Each rule has one worker. The worker undertakes all computing.
+  |    +-· kgtree.py  → A kgtree maintains all state of one rule's matching
+  |    +-· event.py   → Data abstraction of a single input event.
+  +-- holmes_copilot
+       +-· copilot.py  → Input an expected events sequence, and Copilot automatically generates the holmes rule.
 ```
 
 #### Workflow by modules
