@@ -1,4 +1,4 @@
-# Holmes: Cross Events Query Language
+# 福尔摩斯: 流式跨事件查询引擎
 [![release](https://img.shields.io/badge/Latest_release-v1.1.2_alpha-red.svg)](https://github.com/Amber-Security/X-EQL/releases/tag/v1.1.2-alpha)
 [![organization](https://img.shields.io/badge/Organization-AmberSecurity-yellow.svg)](https://github.com/Amber-Security)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
@@ -7,7 +7,7 @@
 
 从流式的事件输入中查询符合数据特征约束的一个事件序列
 
-## 用法
+## 快速上手
 
 > 引擎整体被封装为两个python的包：engine和rule
 
