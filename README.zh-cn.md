@@ -9,7 +9,7 @@
 
 ## 快速上手
 
-> 引擎整体被封装为两个python的包：engine和rule
+> 引擎整体被封装为三个python的包：`holmes_engine`, `holmes_rule`和`holmes_copilot`.
 
 ### 规则开发
 
@@ -31,7 +31,7 @@ RULE_NAME: MODE sequence by FIELD1, FIELD2, ...
 #### 规则编译
 
 ```Python
-from rule.parser import Parser
+from holmes_rule.parser import Parser
 
 parser = Parser()
 ast = parser.parse(rule="# content of the holmes rule")
@@ -59,7 +59,7 @@ rule = load_rule(ast)
 # ...
 # rule = load_rule(ast)
 
-from engine.engine import Engine
+from holmes_engine.engine import Engine
 
 engine = Engine()
 engine.add_holmes_rule(rule=rule)
@@ -88,6 +88,29 @@ for event in test_events_without_noise:
 engine.fetch_results()
 ```
 
+### Copilot
+
+We provide a Copilot for automatically developing holmes rules: Input an expected events sequence, and Copilot automatically generates the holmes rule.
+
+```Python
+from holmes_copilot.copilot import Copilot
+
+test_events_without_noise = [
+    {"holmes-tag": "ssh_login", "pid": 112, "sessionid": "9876", "localip": "10.2.3.4", "remoteip": "10.2.3.9", "f4": " ", "f5": "x", "time": 10},
+    {"holmes-tag": "read_knownhost", "pid": 113, "sessionid": "9876", "localip": "10.2.3.4", "remoteip": "10.2.3.9", "f4": "-", "f5": "z", "time": 12},
+    {"holmes-tag": "ssh_login", "pid": 111, "sessionid": "3398", "localip": "10.2.3.5", "remoteip": "10.2.3.4", "f4": "b", "f5": "y", "time": 22},
+]
+rule = Copilot.generate_rule(test_events_without_noise)
+print(rule)
+```
+And you will get the output:
+```
+ssh_login_TO_read_knownhost_TO_ssh_login: sparse sequence 
+    [ssh_login] by (sessionid):g1, (localip):g2, (remoteip):g3
+    [read_knownhost] by (sessionid):g1, (localip):g2, (remoteip):g3
+    [ssh_login] by (remoteip):g2
+```
+
 ## 开发者手册
 
 ### 各模块理解
@@ -95,15 +118,17 @@ engine.fetch_results()
 #### src目录结构
 
 ```
-·-+-· rule
+·-+-· holmes_rule
   |    +-· syntax.py  → 规则的YACC文法实现
   |    +-· rule.py    → 规则的class定义，引擎是根据这里的实现来理解规则的；提供api将输入的ast实例化为规则实例
   |    +-· parser.py  → 输入文本规则，调用syntax中的接口解析规则，输出为规则的ast
-  +-- engine
-       +-· engine.py  → 处理引擎，提供添加规则、输入事件、读取结果3个api
-       +-· worker.py  → 一条规则一个worker，由worker承担全部的匹配计算
-       +-· kgtree.py  → kgtree维护规则匹配的全部状态
-       +-· event.py   → 输入单事件的数据抽象
+  +-- holmes_engine
+  |    +-· engine.py  → 处理引擎，提供添加规则、输入事件、读取结果3个api
+  |    +-· worker.py  → 一条规则一个worker，由worker承担全部的匹配计算
+  |    +-· kgtree.py  → kgtree维护规则匹配的全部状态
+  |    +-· event.py   → 输入单事件的数据抽象
+  +-- holmes_copilot
+       +-· copilot.py  → 输入一组预期事件序列，自动输出holmes规则
 ```
 
 #### 各模块工作流
