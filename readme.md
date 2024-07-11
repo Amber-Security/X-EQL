@@ -120,11 +120,11 @@ ssh_login_TO_read_knownhost_TO_ssh_login: sparse sequence
 #### src directory
 
 ```
-·-+-· rule
+·-+-· holmes_rule
   |    +-· syntax.py  → YACC grammar implementation of rules
   |    +-· rule.py    → The class definition of the rule, based on which the engine understands rules; Provides an api transforming the input AST to a rule instance.
   |    +-· parser.py  → Input the Holmes rule text, invoke the parsing-api in `syntax.py`, and return the ast of the rules
-  +-- engine
+  +-- holmes_engine
   |    +-· engine.py  → The processing engine. Three apis provided: add rule, input events and fetch results.
   |    +-· worker.py  → Each rule has one worker. The worker undertakes all computing.
   |    +-· kgtree.py  → A kgtree maintains all state of one rule's matching
