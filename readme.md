@@ -1,8 +1,8 @@
 # Holmes: Streaming Cross Events Query Engine
 
-[![release](https://img.shields.io/badge/Latest_release-v1.1.2_alpha-red.svg)](https://github.com/Amber-Security/X-EQL/releases/tag/v1.1.2-alpha)
+[![release](https://img.shields.io/badge/Latest_release-v1.2.0_alpha-red.svg)](https://github.com/Amber-Security/X-EQL/releases/tag/v1.2.0-alpha)
 [![zh-cn-document](https://img.shields.io/badge/Document-Chinese_version-green.svg)](./README.zh-cn.md)
-[![organization](https://img.shields.io/badge/Organization-AmberSecurity-yellow.svg)](https://github.com/Amber-Security)
+[![organization](https://img.shields.io/badge/Organization-Amber_Security-yellow.svg)](https://github.com/Amber-Security)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 ## What is Holmes
