@@ -139,4 +139,4 @@ ssh_login_TO_read_knownhost_TO_ssh_login: sparse sequence
 
 ### Algorithm
 
-> to be translated.
+[📑Here but up to now only available in Chinese doc](https://github.com/Amber-Security/X-EQL/blob/main/README.zh-cn.md#%E7%AE%97%E6%B3%95%E7%90%86%E8%A7%A3)
