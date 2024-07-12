@@ -90,7 +90,7 @@ engine.fetch_results()
 
 ### Copilot
 
-We provide a Copilot for automatically developing holmes rules: Input an expected events sequence, and Copilot automatically generates the holmes rule.
+为了使holmes规则的开发具备更好的自动化潜力，我们提供了一个Copilot: 输入预期的事件序列，Copilot自动生成用以检出该预期事件序列模式的holmes规则。
 
 ```Python
 from holmes_copilot.copilot import Copilot
@@ -103,7 +103,7 @@ test_events_without_noise = [
 rule = Copilot.generate_rule(test_events_without_noise)
 print(rule)
 ```
-And you will get the output:
+执行上述用例，将得到预期输出:
 ```
 ssh_login_TO_read_knownhost_TO_ssh_login: sparse sequence 
     [ssh_login] by (sessionid):g1, (localip):g2, (remoteip):g3
