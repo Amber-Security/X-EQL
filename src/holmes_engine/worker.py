@@ -11,13 +11,13 @@ class Worker:
         self.rule:HolmesRule = rule
         self.rulename:str = rulename
         # handle tid repeated situation before initing
-        dup_nodes = {}
+        self.dup_nodes = {}  # repeated counts for every tid
         for tag_node in rule.tag_nodes:
-            if tag_node.tag_rule.id not in dup_nodes:
-                dup_nodes[tag_node.tag_rule.id] = 0
+            if tag_node.tag_rule.id not in self.dup_nodes:
+                self.dup_nodes[tag_node.tag_rule.id] = 0
             else:
-                dup_nodes[tag_node.tag_rule.id] += 1
-                tag_node.tag_rule.id += '@' + str(dup_nodes[tag_node.tag_rule.id])
+                self.dup_nodes[tag_node.tag_rule.id] += 1
+                tag_node.tag_rule.id += '@' + str(self.dup_nodes[tag_node.tag_rule.id])
         # init
         self.ENTRY_TID = self.rule.tag_nodes[0].tag_rule.id
         self.FINAL_TID = self.rule.tag_nodes[-1].tag_rule.id
@@ -40,7 +40,7 @@ class Worker:
         # Dynamic but temporary, only live during one event's processing
         # The stack top of `tid_dyn_stack` represents the current dynamic tid of the event being processed.
         # You must reset it after or before one event's processing!!
-        self.tid_dyn_stack = []
+        self.tid_dyn = None
         # FIX
         self.default_expired = 3
         # dense/sparse mode only
@@ -112,12 +112,11 @@ class Worker:
             del self.ENTRY_POOL[dead_tree_ind]
 
     def new_event_node(self, raw_event):
-        tid_dyn = raw_event["holmes-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
         event = Event(
             eid=str(uuid4()),
             raw_event=raw_event,
-            tid_dyn=tid_dyn,
-            kg_inc_map=self.TAG2INC[raw_event["holmes-tag"]]
+            tid_dyn=self.tid_dyn,
+            kg_inc_map=self.TAG2INC[self.tid_dyn]
         )
         self.EID_MAP[event.eid] = event
         return KGTreeNode(event.eid)
@@ -136,7 +135,7 @@ class Worker:
     def check_constraint(self, inspector_node:KGTreeNode, inspected_event):
         inspector_event = self.EID_MAP[inspector_node.eid]
         inspector_tid = inspector_event.tid_dyn
-        inspected_tid = inspected_event["holmes-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
+        inspected_tid = self.tid_dyn
         for constraint_group_id in self.CONJUGATE_MAP[inspected_tid][inspector_tid]:
             assert constraint_group_id in self.TAG2KG[inspected_tid]
             prev_constraint = inspector_event.kg_inc[constraint_group_id]
@@ -145,11 +144,11 @@ class Worker:
             if prev_constraint != fields_values: return False
         return True
 
-    def precheck_has_position(self, inspected_event, root:KGTreeNode):
-        tid_y = inspected_event["holmes-tag"]
+    def precheck_has_position(self, root:KGTreeNode):
+        tid_y = self.tid_dyn
         ind_y = self.TAGID2IND[tid_y]
         for leaf in root.leaves:
-            leaf_seq_ind = self.TAGID2IND[self.EID_MAP[leaf.eid].raw_event["holmes-tag"]]
+            leaf_seq_ind = self.TAGID2IND[self.EID_MAP[leaf.eid].tid_dyn]
             if ind_y - leaf_seq_ind <= 1: return True
         return False
 
@@ -158,7 +157,7 @@ class Worker:
         results:List[List] = []
         # checking
         tid_x = self.EID_MAP[entry.eid].tid_dyn
-        tid_y = inspected_event["holmes-tag"] if self.tid_dyn_stack == [] else self.tid_dyn_stack[-1]
+        tid_y = self.tid_dyn
         ind_x = self.TAGID2IND[tid_x]
         ind_y = self.TAGID2IND[tid_y]
         if ind_y - ind_x == 1:
@@ -174,17 +173,6 @@ class Worker:
                 if tid_y == self.FINAL_TID:
                     return [[self.EID_MAP[entry.eid].raw_event, inspected_event]]
         else:
-            need_clean_tid_stack = False
-            if ind_y == ind_x:
-                assert tid_y == tid_x.split("@")[0]
-                tid_y += '@1' if tid_y == tid_x else '@' + str(int(tid_x.split("@")[1]) + 1)
-                # has no more chance
-                if tid_y not in self.TAGID_SET: return results
-                # update ind of y
-                ind_y = self.TAGID2IND[tid_y]
-                # push stack
-                self.tid_dyn_stack.append(tid_y)
-                need_clean_tid_stack = True
             assert ind_y > ind_x
             if self.check_constraint(inspector_node=entry, inspected_event=inspected_event):
                 for child in entry.children:
@@ -193,20 +181,24 @@ class Worker:
                         for result in results_collected:
                             result.insert(0, self.EID_MAP[entry.eid].raw_event)
                     results += results_collected
-            if need_clean_tid_stack: self.tid_dyn_stack.pop()
         return results
 
     def process_event(self, event):
         results = []
-        if event["holmes-tag"] not in self.TAGID_SET: return
+        tid = event["holmes-tag"]
+        if tid not in self.TAGID_SET: return
         for entry in self.ENTRY_POOL:
-            if not self.precheck_has_position(inspected_event=event, root=entry): continue
-            results_collected = self.process_dfs(entry=entry, inspected_event=event, root=entry)
+            for i in range(self.dup_nodes[tid] + 1):
+                self.tid_dyn = tid + '@' + str(i) if i != 0 else tid
+                if self.tid_dyn == self.ENTRY_TID: continue
+                if not self.precheck_has_position(root=entry): continue
+                results_collected = self.process_dfs(entry=entry, inspected_event=event, root=entry)
+                results += results_collected
             if self.last_ts_cache is not None:
                 entry.set_last_ts(ts=self.last_ts_cache)
                 self.last_ts_cache = None
-            results += results_collected
-        if event["holmes-tag"] == self.ENTRY_TID:
+        if tid == self.ENTRY_TID:
+            self.tid_dyn = tid
             self.new_entry(raw_event=event)
             # return []
         return results
