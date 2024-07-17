@@ -51,7 +51,7 @@ def load_rule(ast):
         ruleid=rule_id,
         shape=shape,
         tag_nodes=tag_nodes,
-        max_span=60,
+        max_span=100000000,
         sparse=mode=="sparse"
     )
     return rule
