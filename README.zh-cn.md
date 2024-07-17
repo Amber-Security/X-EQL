@@ -9,6 +9,15 @@
 
 ## 快速上手
 
+### Install
+
+> 引擎整体被封装为三个python的包：`holmes_engine`, `holmes_rule`和`holmes_copilot`. <br>直接pip安装release中发布的whl文件即可.
+
+```
+pip install holmes-*.whl
+```
+
+
 > 引擎整体被封装为三个python的包：`holmes_engine`, `holmes_rule`和`holmes_copilot`.
 
 ### 规则开发

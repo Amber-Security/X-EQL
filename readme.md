@@ -11,7 +11,13 @@ Holmes is a streaming events query engine, which queries an event sequence from 
 
 ## Getting Started
 
-> The whole engine is packaged into three python-package: `holmes_engine`, `holmes_rule` and `holmes_copilot`.
+### Install
+
+> The whole engine is packaged into three python-package: `holmes_engine`, `holmes_rule` and `holmes_copilot`. <br>Directly install the `.whl` file in the newest release with `pip`.
+
+```
+pip install holmes-*.whl
+```
 
 ### Rule development
 
