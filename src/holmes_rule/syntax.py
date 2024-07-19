@@ -142,20 +142,4 @@ def gen_parser():
 
 
 if __name__ == '__main__':
-    ast_root = gen_parser().parse('''
-        test_rule: sparse sequence by pid
-            [tag1] by (f4, f5):g, (f1, f2):g1, (f3):g2
-            [tag2] 
-            [
-                [tag5] by (f2, f1):g, (f3, f4):g1      
-                [tag6] by (f2, f1):g, (f3, f4):g1      
-            ]
-            [
-                [tag5] by (f2, f1):g, (f3, f4):g1      
-                [tag6] by (f2, f1):g, (f3, f4):g1      
-            ]
-            [tag3] by (f2, f1):g, (f3, f4):g1      
-    ''')
-
-    import json
-    print(json.dumps(ast_root, indent=4))
+    pass
