@@ -82,8 +82,29 @@ def p_seq(p):
     '''
     seq : seq event
         | event
+        | seq AL denseblock AR
+        | AL denseblock AR
     '''
     # print("seq", len(p))
+    if len(p) == 3:
+        p[0] = p[1] + (p[2],)
+        return
+    if len(p) == 2:
+        p[0] = (p[1],)
+        return
+    if len(p) == 5:
+        p[0] = p[1] + (p[3],)
+        return
+    if len(p) == 4:
+        p[0] = (p[2],)
+        return
+
+def p_denseblock(p):
+    '''
+    denseblock  : denseblock event
+                | event
+    '''
+    # print("denseblock", len(p))
     if len(p) == 3:
         p[0] = p[1] + (p[2],)
     else:
@@ -125,6 +146,14 @@ if __name__ == '__main__':
         test_rule: sparse sequence by pid
             [tag1] by (f4, f5):g, (f1, f2):g1, (f3):g2
             [tag2] 
+            [
+                [tag5] by (f2, f1):g, (f3, f4):g1      
+                [tag6] by (f2, f1):g, (f3, f4):g1      
+            ]
+            [
+                [tag5] by (f2, f1):g, (f3, f4):g1      
+                [tag6] by (f2, f1):g, (f3, f4):g1      
+            ]
             [tag3] by (f2, f1):g, (f3, f4):g1      
     ''')
 
