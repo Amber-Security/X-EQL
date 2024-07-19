@@ -14,8 +14,9 @@ class TagRule:
 
 
 class TagNode:
-    def __init__(self, tag_rule:TagRule, binders:List[KeyGroupBind]):
+    def __init__(self, tag_rule:TagRule, binders:List[KeyGroupBind], dense_gid:int=None):
         self.tag_rule:TagRule = tag_rule
+        self.dense_gid:int = dense_gid
         self.binders:List[KeyGroupBind] = binders
 
 
@@ -52,6 +53,15 @@ def load_rule(ast):
             else [gen_tag_node(event_rule=event_rule, common_binder=common_binder) for event_rule in block]
         for block in seq
     ]
+
+    tag_nodes = []
+    dense_gid = 0
+    for block in seq:
+        if isinstance(block[0], str):
+            tag_nodes.append(gen_tag_node(event_rule=block, common_binder=common_binder))
+        else:
+            tag_nodes += [gen_tag_node(event_rule=block, common_binder=common_binder, dense_gid=dense_gid) for event_rule in block]
+            dense_gid += 1
     rule = HolmesRule(
         ruleid=rule_id,
         shape=shape,
