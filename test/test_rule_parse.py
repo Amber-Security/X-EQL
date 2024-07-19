@@ -1,11 +1,11 @@
 
 from holmes_rule.syntax import gen_parser
-from holmes_rule.rule import load_rule
+from holmes_rule.rule import load_rule, HolmesRule
 
 
 def test_yacc_to_ast():
     ast_root = gen_parser().parse('''
-        test_rule: sparse sequence by pid
+        test_rule: sequence by pid
             [tag1] by (f4, f5):g, (f1, f2):g1, (f3):g2
             [tag2] 
             [
@@ -21,8 +21,9 @@ def test_yacc_to_ast():
 
     import json
     print(json.dumps(ast_root, indent=4))
-    rule = load_rule(ast_root)
+    rule:HolmesRule = load_rule(ast_root)
     print(rule)
+    print([tag.dense_gid for tag in rule.tag_nodes])
 
 
 if __name__ == '__main__':

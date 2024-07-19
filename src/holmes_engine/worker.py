@@ -18,7 +18,31 @@ class Worker:
             else:
                 self.dup_nodes[tag_node.tag_rule.id] += 1
                 tag_node.tag_rule.id += '@' + str(self.dup_nodes[tag_node.tag_rule.id])
-        # init
+        # init DENSE MAP
+        # gen dense_gid → prev_tid_sync firstly
+        last_dgid = None
+        last_tid_dyn = None
+        dgid2tid = {}
+        self.DENSE_SHAPE_IND = {}  # tid_sync → int
+        ind = 0
+        for tag_node in rule.tag_nodes:
+            tid_dyn = tag_node.tag_rule.id
+            dense_gid = tag_node.dense_gid
+            if dense_gid != last_dgid:
+                if dense_gid is not None:
+                    dgid2tid[dense_gid] = last_tid_dyn
+                    ind = 0
+                    self.DENSE_SHAPE_IND[tid_dyn] = ind
+            else:
+                last_tid_dyn = tid_dyn
+                if dense_gid is not None:
+                    ind += 1
+                    self.DENSE_SHAPE_IND[tid_dyn] = ind
+        self.FIND_DENSE_PREV = {}  # tid_sync → prev_tid_sync
+        for tag_node in rule.tag_nodes:
+            if tag_node.dense_gid is None: continue
+            self.FIND_DENSE_PREV[tag_node.tag_rule.id] = dgid2tid[tag_node.dense_gid]
+        # init INC, CONJ and others
         self.ENTRY_TID = self.rule.tag_nodes[0].tag_rule.id
         self.FINAL_TID = self.rule.tag_nodes[-1].tag_rule.id
         self.TAGID_SEQ = [tag_node.tag_rule.id for tag_node in rule.tag_nodes]
@@ -35,22 +59,21 @@ class Worker:
         # Dynamic but persistent
         self.EID_MAP:Dict[str, Event] = {}
         self.ENTRY_POOL:List[KGTreeNode] = []
+        #   for trash clean
         self.last_ts_cache = None
         self.tree_dead = []
+        #   for dense
+        #   数据结构: cache = list[tuple(list, pre_entry)]
+        #   每到一个新事件，先不忙进dfs，先把每个cache的entry查了
+        #   {"dense_gid": (list, pre_entry)}
+        self.DENSE_CACHE:Dict[str, Dict[int, List[Event]]] = {} # {prev: {1: [], 2: [], 3: []}}
         # Dynamic but temporary, only live during one event's processing
-        # The stack top of `tid_dyn_stack` represents the current dynamic tid of the event being processed.
-        # You must reset it after or before one event's processing!!
+        #   The stack top of `tid_dyn_stack` represents the current dynamic tid of the event being processed.
+        #   You must reset it after or before one event's processing!!
         self.tid_dyn = None
         # FIX
         self.default_expired = 3
-        # dense/sparse mode only
-        if not self.rule.sparse:
-            # wait_area: TagId indexed array map
-            self.wait_area:Dict[str, List] = {}
-            # <!>ATTENTION: densed expired_span only for expire&clean! Please use rule.max_span for logic!
-            self.expired_span = self.rule.max_span * 3 if self.rule.max_span is not None else self.default_expired
-        else:
-            self.expired_span = self.rule.max_span
+        self.expired_span = self.rule.max_span
 
     def gen_tag2kg(self):
         for tag_node in self.rule.tag_nodes:
@@ -111,18 +134,21 @@ class Worker:
             dead_tree_ind = self.tree_dead.pop()
             del self.ENTRY_POOL[dead_tree_ind]
 
-    def new_event_node(self, raw_event):
-        event = Event(
+    def new_event(self, raw_event):
+        # reference to raw event
+        return Event(
             eid=str(uuid4()),
             raw_event=raw_event,
             tid_dyn=self.tid_dyn,
             kg_inc_map=self.TAG2INC[self.tid_dyn]
         )
+
+    def new_event_node(self, event:Event):
         self.EID_MAP[event.eid] = event
         return KGTreeNode(event.eid)
 
     def new_entry(self, raw_event):
-        entry_node = self.new_event_node(raw_event=raw_event)
+        entry_node = self.new_event_node(event=self.new_event(raw_event))
         entry_node.set_last_ts(ts=raw_event["time"])
         entry_node.set_leaf(entry_node)
         self.ENTRY_POOL.append(entry_node)
@@ -146,11 +172,26 @@ class Worker:
 
     def precheck_has_position(self, root:KGTreeNode):
         tid_y = self.tid_dyn
+        # skip dense node
+        if tid_y in self.FIND_DENSE_PREV: return True
+        # checking
         ind_y = self.TAGID2IND[tid_y]
         for leaf in root.leaves:
             leaf_seq_ind = self.TAGID2IND[self.EID_MAP[leaf.eid].tid_dyn]
             if ind_y - leaf_seq_ind <= 1: return True
         return False
+
+    def liquidate_dense(self, time):
+        def checkout(time):
+            for prev in self.DENSE_CACHE:
+                for slot_ind in self.DENSE_CACHE[prev]:
+                    for event in self.DENSE_CACHE[prev][slot_ind]:
+                        if time > event.raw_event["time"]: yield prev
+                        break
+                    break
+        for prev in checkout(time=time):
+            # results_collected = self.process_dfs(entry=entry, inspected_event=event, root=entry)
+            pass
 
     def process_dfs(self, entry:KGTreeNode, inspected_event, root:KGTreeNode) -> List[List]:
         # results
@@ -164,7 +205,7 @@ class Worker:
             if self.check_time_order(inspector_node=entry, inspected_event=inspected_event) \
                 and self.check_constraint(inspector_node=entry, inspected_event=inspected_event):
                 # ALREADY IN POSITION, AND THIS IS THE END OF GAME
-                node = self.new_event_node(raw_event=inspected_event)
+                node = self.new_event_node(event=self.new_event(inspected_event))
                 entry.add_child(node=node)
                 root.set_leaf(leaf=node)
                 # UPDATE TIMESTAMP
@@ -175,6 +216,16 @@ class Worker:
         else:
             assert ind_y > ind_x
             if self.check_constraint(inspector_node=entry, inspected_event=inspected_event):
+                # check if meets the dense termial condition
+                if self.tid_dyn in self.FIND_DENSE_PREV \
+                    and self.check_time_order(inspector_node=entry, inspected_event=inspected_event):
+                    dense_prev = self.FIND_DENSE_PREV[self.tid_dyn]
+                    if dense_prev not in self.DENSE_CACHE: self.DENSE_CACHE[dense_prev] = {}
+                    if self.DENSE_SHAPE_IND[self.tid_dyn] not in self.DENSE_CACHE[dense_prev]:
+                        self.DENSE_CACHE[dense_prev][self.DENSE_SHAPE_IND[self.tid_dyn]] = []
+                    self.DENSE_CACHE[dense_prev][self.DENSE_SHAPE_IND[self.tid_dyn]].append(self.new_event(inspected_event))
+                    return results
+                # continue checking
                 for child in entry.children:
                     results_collected = self.process_dfs(entry=child, inspected_event=inspected_event, root=root)
                     if results_collected is not None:
@@ -192,6 +243,7 @@ class Worker:
                 self.tid_dyn = tid + '@' + str(i) if i != 0 else tid
                 if self.tid_dyn == self.ENTRY_TID: continue
                 if not self.precheck_has_position(root=entry): continue
+                self.liquidate_dense(event["time"])
                 results_collected = self.process_dfs(entry=entry, inspected_event=event, root=entry)
                 results += results_collected
             if self.last_ts_cache is not None:

@@ -4,7 +4,7 @@ from ply.yacc import yacc
 
 # --- Tokenizer
 
-tokens = ['SYM', 'L', 'R', 'AL', 'AR', 'COLON', 'SPARSE', 'DENSE', 'SEQUENCE', 'BY', 'COMMA']
+tokens = ['SYM', 'L', 'R', 'AL', 'AR', 'COLON', 'SEQUENCE', 'BY', 'COMMA']
 
 t_ignore = ' \t'
 
@@ -13,16 +13,12 @@ t_R = r'\)'
 t_AL = r'\['
 t_AR = r'\]'
 t_COLON = r':'
-t_SPARSE = r'sparse'
-t_DENSE = r'dense'
 t_SEQUENCE = r'sequence'
 t_BY = r'by'
 t_COMMA = r','
 
 def t_SYM(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
-    if t.value == "sparse": t.type = "SPARSE"
-    if t.value == "dense": t.type = "DENSE"
     if t.value == "sequence": t.type = "SEQUENCE"
     if t.value == "by": t.type = "BY"
     return t
@@ -49,16 +45,14 @@ def p_rule(p):
 
 def p_head(p):
     '''
-    head    : SYM COLON SPARSE SEQUENCE
-            | SYM COLON SPARSE SEQUENCE commonkeys
-            | SYM COLON DENSE SEQUENCE
-            | SYM COLON DENSE SEQUENCE commonkeys
+    head    : SYM COLON SEQUENCE
+            | SYM COLON SEQUENCE commonkeys
     '''
     # print("head", len(p))
     if len(p) == 5:
-        p[0] = tuple(['head', p[1], p[3], p[4]])
+        p[0] = tuple(['head', p[1], p[3]])
     else:
-        p[0] = tuple(['head', p[1], p[3], p[4], p[5]])
+        p[0] = tuple(['head', p[1], p[3], p[4]])
 
 def p_commonkeys(p):
     '''
