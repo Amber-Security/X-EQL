@@ -22,15 +22,18 @@ class Worker:
         # gen dense_gid → prev_tid_sync firstly
         last_dgid = None
         last_tid_dyn = None
-        dgid2tid = {}
+        dgid2prev = {}
         self.DENSE_SHAPE_IND = {}  # tid_sync → int
+        self.SLOT_LEN_MAP = {}
         ind = 0
         for tag_node in rule.tag_nodes:
             tid_dyn = tag_node.tag_rule.id
             dense_gid = tag_node.dense_gid
             if dense_gid != last_dgid:
+                if last_dgid is not None:
+                    self.SLOT_LEN_MAP[dgid2prev[last_dgid]] = ind + 1
                 if dense_gid is not None:
-                    dgid2tid[dense_gid] = last_tid_dyn
+                    dgid2prev[dense_gid] = last_tid_dyn
                     ind = 0
                     self.DENSE_SHAPE_IND[tid_dyn] = ind
             else:
@@ -38,10 +41,12 @@ class Worker:
                 if dense_gid is not None:
                     ind += 1
                     self.DENSE_SHAPE_IND[tid_dyn] = ind
+        if dense_gid is not None:
+            self.SLOT_LEN_MAP[dgid2prev[dense_gid]] = ind + 1
         self.FIND_DENSE_PREV = {}  # tid_sync → prev_tid_sync
         for tag_node in rule.tag_nodes:
             if tag_node.dense_gid is None: continue
-            self.FIND_DENSE_PREV[tag_node.tag_rule.id] = dgid2tid[tag_node.dense_gid]
+            self.FIND_DENSE_PREV[tag_node.tag_rule.id] = dgid2prev[tag_node.dense_gid]
         # init INC, CONJ and others
         self.ENTRY_TID = self.rule.tag_nodes[0].tag_rule.id
         self.FINAL_TID = self.rule.tag_nodes[-1].tag_rule.id
@@ -186,16 +191,41 @@ class Worker:
             for prev in self.DENSE_CACHE:
                 for slot_ind in self.DENSE_CACHE[prev]:
                     for event in self.DENSE_CACHE[prev][slot_ind]:
-                        if time > event.raw_event["time"]: yield prev
+                        if time > event.raw_event["time"]:  # if need to handler a slot
+                            is_all_here = True
+                            for i in range(self.SLOT_LEN_MAP[prev]):
+                                if i not in self.DENSE_CACHE[prev]:
+                                    is_all_here = False
+                                    break
+                            if not is_all_here:
+                                pass  # clean garbish
+                            else:
+                                yield prev
                         break
                     break
+        # 所以需要precheck一下：
+        # 应该先查最后一位的slot是否为空，如果空了直接扔掉了
+        # 然后遍历时只需要查递增就得了
         for prev in checkout(time=time):
+            for slot_ind in range(self.SLOT_LEN_MAP[prev]):
+                for event in self.DENSE_CACHE[prev][slot_ind]:
+                    results_collected = self.process_dfs(entry=entry, inspected_event=event, root=entry)
+                    pass
             # results_collected = self.process_dfs(entry=entry, inspected_event=event, root=entry)
             pass
 
-    def process_dfs(self, entry:KGTreeNode, inspected_event, root:KGTreeNode) -> List[List]:
+    def join_new_leaf(self, entry:KGTreeNode, inspected_event, root:KGTreeNode) -> KGTreeNode:
+        node = self.new_event_node(event=self.new_event(inspected_event))
+        entry.add_child(node=node)
+        root.set_leaf(leaf=node)
+        # UPDATE TIMESTAMP
+        self.last_ts_cache = inspected_event["time"]
+        return node
+
+    # 这个函数重构一下，返回的物理意义是叶子结点的集合
+    def process_dfs(self, entry:KGTreeNode, inspected_event, root:KGTreeNode) -> List[KGTreeNode]:
         # results
-        results:List[List] = []
+        results:List[KGTreeNode] = []
         # checking
         tid_x = self.EID_MAP[entry.eid].tid_dyn
         tid_y = self.tid_dyn
@@ -205,14 +235,10 @@ class Worker:
             if self.check_time_order(inspector_node=entry, inspected_event=inspected_event) \
                 and self.check_constraint(inspector_node=entry, inspected_event=inspected_event):
                 # ALREADY IN POSITION, AND THIS IS THE END OF GAME
-                node = self.new_event_node(event=self.new_event(inspected_event))
-                entry.add_child(node=node)
-                root.set_leaf(leaf=node)
-                # UPDATE TIMESTAMP
-                self.last_ts_cache = inspected_event["time"]
+                node = self.join_new_leaf(entry=entry, inspected_event=inspected_event, root=root)
                 # CHECK FINISH
                 if tid_y == self.FINAL_TID:
-                    return [[self.EID_MAP[entry.eid].raw_event, inspected_event]]
+                    return [node]
         else:
             assert ind_y > ind_x
             if self.check_constraint(inspector_node=entry, inspected_event=inspected_event):
@@ -228,11 +254,16 @@ class Worker:
                 # continue checking
                 for child in entry.children:
                     results_collected = self.process_dfs(entry=child, inspected_event=inspected_event, root=root)
-                    if results_collected is not None:
-                        for result in results_collected:
-                            result.insert(0, self.EID_MAP[entry.eid].raw_event)
                     results += results_collected
         return results
+
+    def fetch_results(self, leaf:KGTreeNode):
+        ptr = leaf
+        chain = []
+        while ptr is not None:
+            chain.insert(0, self.EID_MAP[ptr.eid].raw_event)
+            ptr = ptr.parent
+        return chain
 
     def process_event(self, event):
         results = []
@@ -244,8 +275,10 @@ class Worker:
                 if self.tid_dyn == self.ENTRY_TID: continue
                 if not self.precheck_has_position(root=entry): continue
                 self.liquidate_dense(event["time"])
-                results_collected = self.process_dfs(entry=entry, inspected_event=event, root=entry)
-                results += results_collected
+                terminal_leaves = self.process_dfs(entry=entry, inspected_event=event, root=entry)
+                for leaf in terminal_leaves:
+                    results_collected = self.fetch_results(leaf=leaf)
+                    results.append(results_collected)
             if self.last_ts_cache is not None:
                 entry.set_last_ts(ts=self.last_ts_cache)
                 self.last_ts_cache = None
