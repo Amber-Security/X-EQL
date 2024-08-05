@@ -8,7 +8,6 @@ from holmes_engine.engine import Engine
 if __name__ == '__main__':
     test_rule = '''
         ssh_bruteforce_and_lateral_with_knownhost: sequence
-            [start]
             [
                 [ssh_login] by (sessionid):g1
                 [read_knownhost] by (sessionid):g1, (localip):g2

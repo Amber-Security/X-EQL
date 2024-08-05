@@ -26,6 +26,9 @@ class Worker:
         self.DENSE_SHAPE_IND = {}  # tid_sync → int
         self.SLOT_LEN_MAP = {}
         ind = 0
+        if rule.tag_nodes[0].dense_gid is not None:
+            last_dgid = None
+            last_tid_dyn = "DENSE_BOOT"
         for tag_node in rule.tag_nodes:
             tid_dyn = tag_node.tag_rule.id
             dense_gid = tag_node.dense_gid
@@ -82,6 +85,10 @@ class Worker:
         self.default_expired = 3
         self.expired_span = self.rule.max_span
         self.default_dense_expired = 1
+        # check and init dense boot node
+        if rule.tag_nodes[0].dense_gid is not None:
+            self.tid_dyn = "DENSE_BOOT"
+            self.new_entry(raw_event={"time": -1})
 
     def gen_tag2kg(self):
         for tag_node in self.rule.tag_nodes:
@@ -136,7 +143,8 @@ class Worker:
             if dead_leaves == []:
                 continue
             self.prune_algorithm(entry=root, dead_leaves=dead_leaves)
-            if len(root.children) == 0:
+            if root.eid in self.EID_MAP: assert self.EID_MAP[root.eid].tid_dyn == "DENSE_BOOT"
+            if len(root.children) == 0 and root.eid not in self.EID_MAP:
                 self.tree_dead.append(root_ind)
         while self.tree_dead != []:
             dead_tree_ind = self.tree_dead.pop()
@@ -148,7 +156,7 @@ class Worker:
             eid=str(uuid4()),
             raw_event=raw_event,
             tid_dyn=self.tid_dyn,
-            kg_inc_map=self.TAG2INC[self.tid_dyn]
+            kg_inc_map=self.TAG2INC[self.tid_dyn] if self.tid_dyn != "DENSE_BOOT" else None
         )
 
     def new_event_node(self, event:Event):
@@ -162,6 +170,7 @@ class Worker:
         self.ENTRY_POOL.append(entry_node)
 
     def check_time_order(self, inspector_node:KGTreeNode, inspected_event):
+        if self.EID_MAP[inspector_node.eid].tid_dyn == "DENSE_BOOT": return True
         inspector_event = self.EID_MAP[inspector_node.eid].raw_event
         return inspected_event["time"] >= inspector_event["time"] \
             and inspected_event["time"] - inspector_event["time"] <= self.rule.max_span
@@ -169,6 +178,7 @@ class Worker:
     def check_constraint(self, inspector_node:KGTreeNode, inspected_event):
         inspector_event = self.EID_MAP[inspector_node.eid]
         inspector_tid = inspector_event.tid_dyn
+        if inspector_tid == "DENSE_BOOT": return True
         inspected_tid = self.tid_dyn
         for constraint_group_id in self.CONJUGATE_MAP[inspected_tid][inspector_tid]:
             assert constraint_group_id in self.TAG2KG[inspected_tid]
@@ -185,6 +195,7 @@ class Worker:
         # checking
         ind_y = self.TAGID2IND[tid_y]
         for leaf in root.leaves:
+            if self.EID_MAP[leaf.eid].tid_dyn == "DENSE_BOOT": continue
             leaf_seq_ind = self.TAGID2IND[self.EID_MAP[leaf.eid].tid_dyn]
             if ind_y - leaf_seq_ind <= 1: return True
         return False
@@ -249,7 +260,7 @@ class Worker:
         # checking
         tid_x = self.EID_MAP[entry.eid].tid_dyn
         tid_y = self.tid_dyn
-        ind_x = self.TAGID2IND[tid_x]
+        ind_x = self.TAGID2IND[tid_x] if tid_x != "DENSE_BOOT" else -1
         ind_y = self.TAGID2IND[tid_y]
         if ind_y - ind_x == 1 and (tid_y not in self.FIND_DENSE_PREV or liquidate):
             if self.check_time_order(inspector_node=entry, inspected_event=inspected_event) \
@@ -284,9 +295,13 @@ class Worker:
         ptr = leaf
         chain = []
         while ptr is not None:
+            if self.EID_MAP[ptr.eid].tid_dyn == "DENSE_BOOT": break
             chain.insert(0, self.EID_MAP[ptr.eid].raw_event)
             ptr = ptr.parent
         return chain
+
+    def is_start_event(self, tid):
+        return tid == self.ENTRY_TID and tid not in self.FIND_DENSE_PREV
 
     def process_event(self, event):
         results = []
@@ -295,7 +310,7 @@ class Worker:
         for entry in self.ENTRY_POOL:
             for i in range(self.dup_nodes[tid] + 1):
                 self.tid_dyn = tid + '@' + str(i) if i != 0 else tid
-                if self.tid_dyn == self.ENTRY_TID: continue
+                if self.is_start_event(tid=self.tid_dyn): continue
                 if not self.precheck_has_position(root=entry): continue
                 terminal_leaves = []
                 terminal_leaves += self.liquidate_dense(event["time"], root=entry)
@@ -306,7 +321,7 @@ class Worker:
             if self.last_ts_cache is not None:
                 entry.set_last_ts(ts=self.last_ts_cache)
                 self.last_ts_cache = None
-        if tid == self.ENTRY_TID:
+        if self.is_start_event(tid=tid):
             self.tid_dyn = tid
             self.new_entry(raw_event=event)
             # return []

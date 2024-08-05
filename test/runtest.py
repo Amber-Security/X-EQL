@@ -23,9 +23,9 @@ if __name__ == '__main__':
     from holmes_rule.rule import load_rule
     from holmes_rule.parser import Parser
     parser = Parser()
-    rule = load_rule(parser.parse(rule=test_rule2))
     engine = Engine()
-    engine.add_holmes_rule(rule=rule)
+    engine.add_holmes_rule(rule=load_rule(parser.parse(rule=test_rule2)))
+    engine.add_holmes_rule(rule=load_rule(parser.parse(rule=test_rule)))
 
     test_events_without_noise = [
         {"holmes-tag": "ssh_login", "pid": 111, "sessionid": "aaaa", "localip": "10.2.3.4", "remoteip": "c", "f4": "d", "f5": "e", "time": 1},
@@ -47,6 +47,11 @@ if __name__ == '__main__':
     ]
 
     for event in test_events_without_noise2:
+        engine.process_event(event=event)
+    for r in engine.fetch_results():
+        print([(r['holmes-tag'], r['time']) for r in r['output']])
+    print("\n")
+    for event in test_events_without_noise:
         engine.process_event(event=event)
     for r in engine.fetch_results():
         print([(r['holmes-tag'], r['time']) for r in r['output']])
