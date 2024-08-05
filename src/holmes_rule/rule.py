@@ -39,7 +39,7 @@ def gen_tag_node(event_rule, common_binder, dense_gid=None) -> TagNode:
 def load_rule(ast):
     _, head, seq = ast
     # parse head
-    if len(head) == 5:
+    if len(head) == 4:
         _, rule_id, shape, _commonk = head
         commonk = _commonk[1]
         common_binder = [KeyGroupBind("*", commonk)]

@@ -50,9 +50,9 @@ def p_head(p):
     '''
     # print("head", len(p))
     if len(p) == 5:
-        p[0] = tuple(['head', p[1], p[3]])
-    else:
         p[0] = tuple(['head', p[1], p[3], p[4]])
+    else:
+        p[0] = tuple(['head', p[1], p[3]])
 
 def p_commonkeys(p):
     '''

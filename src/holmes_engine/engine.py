@@ -38,8 +38,5 @@ class Engine:
             results = worker.process_event(event=event)
             worker.prune(event_time=event["time"])
             if results != []:
-                if worker.rule.sparse:
-                    for result in results:
-                        self.results_cached_buffer.append({"rulename": worker.rulename, "output": result})
-                else:
-                    pass
+                for result in results:
+                    self.results_cached_buffer.append({"rulename": worker.rulename, "output": result})
