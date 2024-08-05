@@ -26,14 +26,13 @@ pip install holmes-*.whl
 > If the sorted timestamp field is sparsely separable in your input-stream of detected events:
 
 ```
-RULE_NAME: MODE sequence by FIELD1, FIELD2, ...
+RULE_NAME: sequence by FIELD1, FIELD2, ...
     [EVENT_TAG1] by (f4, f5):g, (f1, f2):g1, (f3):g2
     [EVENT_TAG2] by (f1, f2):g, (f3):g2, (f5):g3
     [EVENT_TAG3] by (f2, f1):g, (f3, f4):g1, (f5):g3
 ```
 
 * `RULE_NAME` - rule name
-* `MODE` - Can be value of `sparse` or `dense`. Up to now, only `sparse` supported
 * `by FIELD1, FIELD2, ...` - The global join keys. Can be empty.
 * `EVENT_TAG1` - Specify a single event name.
 * `by (f4, f5):g` - Specify a group of join keys. Join keys refers to the specified field names of the specified EVENT.
