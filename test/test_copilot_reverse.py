@@ -219,6 +219,7 @@ if __name__ == "__main__":
     parser = Parser()
     print(rule)
     rule = load_rule(parser.parse(rule=rule))
+    rule.max_span = 666666666666
     engine = Engine()
     engine.add_holmes_rule(rule=rule)
     for event in test_events_without_noise2:
