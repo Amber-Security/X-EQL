@@ -16,7 +16,7 @@ class Copilot:
             holmes_tag = repeated_tag_cache[holmes_tag]
             tag_seq.append(holmes_tag)
         default_rule_name = "_TO_".join(tag_seq).replace("#", "")
-        head = default_rule_name + ": sparse sequence "
+        head = default_rule_name + ": sequence "
         repeated_tag_cache = {}
         # calc
         value2fields:Dict[Any, Set[str]] = {}

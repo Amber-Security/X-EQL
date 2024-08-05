@@ -1,3 +1,7 @@
+'''
+清体力测试
+'''
+
 from holmes_engine.engine import Engine
 
 
@@ -5,13 +9,13 @@ if __name__ == '__main__':
     # 何不将绕过行为做成宏？
     # 非等式关系：group增量不变，引入支配概念
     test_rule2 = '''
-        test_rule: sparse sequence by pid
+        test_rule: sequence by pid
             [tag1] by (f4, f5):g, (f1, f2):g1, (f3):g2
             [tag2] by (f1, f2):g, (f3):g2, (f5):g3
             [tag3] by (f2, f1):g, (f3, f4):g1, (f5):g3
     '''
     test_rule = '''
-        ssh_bruteforce_and_lateral_with_knownhost: sparse sequence
+        ssh_bruteforce_and_lateral_with_knownhost: sequence
             [ssh_login] by (sessionid):g1
             [read_knownhost] by (sessionid):g1, (localip):g2
             [ssh_login] by (remoteip):g2

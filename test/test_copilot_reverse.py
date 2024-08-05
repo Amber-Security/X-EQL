@@ -1,3 +1,7 @@
+'''
+Copilot可逆性测试
+'''
+
 from holmes_copilot.copilot import Copilot
 
 if __name__ == "__main__":

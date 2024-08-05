@@ -4,7 +4,7 @@ from ply.yacc import yacc
 
 # --- Tokenizer
 
-tokens = ['SYM', 'L', 'R', 'AL', 'AR', 'COLON', 'SPARSE', 'DENSE', 'SEQUENCE', 'BY', 'COMMA']
+tokens = ['SYM', 'L', 'R', 'AL', 'AR', 'COLON', 'SEQUENCE', 'BY', 'COMMA']
 
 t_ignore = ' \t'
 
@@ -13,16 +13,12 @@ t_R = r'\)'
 t_AL = r'\['
 t_AR = r'\]'
 t_COLON = r':'
-t_SPARSE = r'sparse'
-t_DENSE = r'dense'
 t_SEQUENCE = r'sequence'
 t_BY = r'by'
 t_COMMA = r','
 
 def t_SYM(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
-    if t.value == "sparse": t.type = "SPARSE"
-    if t.value == "dense": t.type = "DENSE"
     if t.value == "sequence": t.type = "SEQUENCE"
     if t.value == "by": t.type = "BY"
     return t
@@ -49,16 +45,14 @@ def p_rule(p):
 
 def p_head(p):
     '''
-    head    : SYM COLON SPARSE SEQUENCE
-            | SYM COLON SPARSE SEQUENCE commonkeys
-            | SYM COLON DENSE SEQUENCE
-            | SYM COLON DENSE SEQUENCE commonkeys
+    head    : SYM COLON SEQUENCE
+            | SYM COLON SEQUENCE commonkeys
     '''
     # print("head", len(p))
     if len(p) == 5:
         p[0] = tuple(['head', p[1], p[3], p[4]])
     else:
-        p[0] = tuple(['head', p[1], p[3], p[4], p[5]])
+        p[0] = tuple(['head', p[1], p[3]])
 
 def p_commonkeys(p):
     '''
@@ -82,8 +76,29 @@ def p_seq(p):
     '''
     seq : seq event
         | event
+        | seq AL denseblock AR
+        | AL denseblock AR
     '''
     # print("seq", len(p))
+    if len(p) == 3:
+        p[0] = p[1] + (p[2],)
+        return
+    if len(p) == 2:
+        p[0] = (p[1],)
+        return
+    if len(p) == 5:
+        p[0] = p[1] + (p[3],)
+        return
+    if len(p) == 4:
+        p[0] = (p[2],)
+        return
+
+def p_denseblock(p):
+    '''
+    denseblock  : denseblock event
+                | event
+    '''
+    # print("denseblock", len(p))
     if len(p) == 3:
         p[0] = p[1] + (p[2],)
     else:
@@ -121,12 +136,4 @@ def gen_parser():
 
 
 if __name__ == '__main__':
-    ast_root = gen_parser().parse('''
-        test_rule: sparse sequence by pid
-            [tag1] by (f4, f5):g, (f1, f2):g1, (f3):g2
-            [tag2] 
-            [tag3] by (f2, f1):g, (f3, f4):g1      
-    ''')
-
-    import json
-    print(json.dumps(ast_root, indent=4))
+    pass

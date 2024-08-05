@@ -11,6 +11,9 @@ class Event:
         self.gen_kg_inc()
 
     def gen_kg_inc(self):
+        if self.kg_inc_map is None:
+            assert self.tid_dyn == "DENSE_BOOT"
+            return
         for group_id in self.kg_inc_map:
             fields = self.kg_inc_map[group_id]
             fields_values = tuple([self.raw_event[name] for name in fields])
