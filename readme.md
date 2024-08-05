@@ -23,6 +23,8 @@ pip install holmes-*.whl
 
 #### Holmes syntax
 
+> If the sorted timestamp field is sparsely separable in your input-stream of detected events:
+
 ```
 RULE_NAME: MODE sequence by FIELD1, FIELD2, ...
     [EVENT_TAG1] by (f4, f5):g, (f1, f2):g1, (f3):g2
@@ -36,6 +38,18 @@ RULE_NAME: MODE sequence by FIELD1, FIELD2, ...
 * `EVENT_TAG1` - Specify a single event name.
 * `by (f4, f5):g` - Specify a group of join keys. Join keys refers to the specified field names of the specified EVENT.
 
+> If the sorted timestamp fields may be densely clustered: (for example, several feature events occured within 1 second, but your timestamp granularity is only accurate to the second level)
+
+```
+RULE_NAME: sequence by FIELD1, FIELD2, ...
+    [
+        [EVENT_TAG1] by (f4, f5):g1
+        [EVENT_TAG2] by (f1, f2):g1, (f3):g2
+    ]
+    [EVENT_TAG3] by (f1):g2
+```
+
+👆 As shown, you can write the rule like such way when `EVENT_TAG1` and `EVENT_TAG2` can be crowded together instantaneously.
 
 #### Rule compile
 

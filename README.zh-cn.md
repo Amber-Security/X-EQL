@@ -24,18 +24,32 @@ pip install holmes-*.whl
 
 #### Holmes语法
 
+> 如果输入检测的事件流，其排序时戳字段是稀疏可分的：
+
 ```
-RULE_NAME: MODE sequence by FIELD1, FIELD2, ...
+RULE_NAME: sequence by FIELD1, FIELD2, ...
     [EVENT_TAG1] by (f4, f5):g, (f1, f2):g1, (f3):g2
     [EVENT_TAG2] by (f1, f2):g, (f3):g2, (f5):g3
     [EVENT_TAG3] by (f2, f1):g, (f3, f4):g1, (f5):g3
 ```
 
 * `RULE_NAME` - 规则名
-* `MODE` - 值可选为 `sparse` or `dense`. 目前仅支持 `sparse`
 * `by FIELD1, FIELD2, ...` - 全局字段约束，可以不指定
 * `EVENT_TAG1` - 指定一个单事件的名字.
 * `by (f4, f5):g` - 指定一组字段约束. 括号内指定这个group要约束该事件的哪些字段名.
+
+> 如果输入检测的事件流，其排序时戳字段可能存在稠密扎堆的情形：（如几个特征时间瞬发在1秒内，且你的时戳粒度只能精确到秒级）
+
+```
+RULE_NAME: sequence by FIELD1, FIELD2, ...
+    [
+        [EVENT_TAG1] by (f4, f5):g1
+        [EVENT_TAG2] by (f1, f2):g1, (f3):g2
+    ]
+    [EVENT_TAG3] by (f1):g2
+```
+
+👆 如实例所示，当`EVENT_TAG1`和`EVENT_TAG2`可能挤在一起瞬间发生时，你就可以这样书写规则
 
 #### 规则编译
 
