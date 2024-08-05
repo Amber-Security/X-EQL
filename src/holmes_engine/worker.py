@@ -30,12 +30,16 @@ class Worker:
             tid_dyn = tag_node.tag_rule.id
             dense_gid = tag_node.dense_gid
             if dense_gid != last_dgid:
+                # meet a new block, or out a block
                 if last_dgid is not None:
+                    # out a block
                     self.SLOT_LEN_MAP[dgid2prev[last_dgid]] = ind + 1
                 if dense_gid is not None:
+                    # into a new block
                     dgid2prev[dense_gid] = last_tid_dyn
                     ind = 0
                     self.DENSE_SHAPE_IND[tid_dyn] = ind
+                last_dgid = dense_gid
             else:
                 last_tid_dyn = tid_dyn
                 if dense_gid is not None:
@@ -193,7 +197,7 @@ class Worker:
         entry.add_child(node=node)
         root.set_leaf(leaf=node)
         # UPDATE TIMESTAMP
-        self.last_ts_cache = inspected_event["time"]
+        self.last_ts_cache = inspected_event.raw_event["time"] if isinstance(inspected_event, Event) else inspected_event["time"]
         return node
 
     def liquidate_dense(self, time, root:KGTreeNode):
@@ -216,12 +220,16 @@ class Worker:
         for prev, is_all_here in checkout(time=time):
             done.append(prev)
             if not is_all_here: continue
-            head_nodes = [self.join_new_leaf(entry=prev, inspected_event=head_event) for head_event in self.DENSE_CACHE[prev][0]]
+            head_nodes = [self.join_new_leaf(entry=prev, inspected_event=head_event, root=root) for head_event in self.DENSE_CACHE[prev][0]]
+            tid_dyn_save = self.tid_dyn
             for head_n in head_nodes:
+                self.DENSE_LEAVES.add(head_n)
                 for slot_ind in range(1, self.SLOT_LEN_MAP[self.EID_MAP[prev.eid].tid_dyn]):
                     for event in self.DENSE_CACHE[prev][slot_ind]:
-                        results_collected = self.process_dfs(entry=head_n, inspected_event=event, root=root, liquidate=True)
+                        self.tid_dyn = event.tid_dyn
+                        results_collected = self.process_dfs(entry=head_n, inspected_event=event.raw_event, root=root, liquidate=True)
                         results += results_collected
+            self.tid_dyn = tid_dyn_save
         # clean dyn cache
         for prev in done: del self.DENSE_CACHE[prev]
         # clean useless nodes
@@ -243,7 +251,7 @@ class Worker:
         tid_y = self.tid_dyn
         ind_x = self.TAGID2IND[tid_x]
         ind_y = self.TAGID2IND[tid_y]
-        if ind_y - ind_x == 1:
+        if ind_y - ind_x == 1 and (tid_y not in self.FIND_DENSE_PREV or liquidate):
             if self.check_time_order(inspector_node=entry, inspected_event=inspected_event) \
                 and self.check_constraint(inspector_node=entry, inspected_event=inspected_event):
                 # ALREADY IN POSITION, AND THIS IS THE END OF GAME

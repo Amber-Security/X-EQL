@@ -23,7 +23,7 @@ if __name__ == '__main__':
     from holmes_rule.rule import load_rule
     from holmes_rule.parser import Parser
     parser = Parser()
-    rule = load_rule(parser.parse(rule=test_rule))
+    rule = load_rule(parser.parse(rule=test_rule2))
     engine = Engine()
     engine.add_holmes_rule(rule=rule)
 
@@ -46,7 +46,7 @@ if __name__ == '__main__':
         {"holmes-tag": "tag3", "pid": 111, "f1": "e", "f2": "d", "f3": "a", "f4": "b", "f5": "y", "time": 22},
     ]
 
-    for event in test_events_without_noise:
+    for event in test_events_without_noise2:
         engine.process_event(event=event)
     for r in engine.fetch_results():
         print([(r['holmes-tag'], r['time']) for r in r['output']])
