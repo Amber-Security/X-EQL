@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Set
 from uuid import uuid4
 
 from holmes_rule.rule import HolmesRule
@@ -68,10 +68,8 @@ class Worker:
         self.last_ts_cache = None
         self.tree_dead = []
         #   for dense
-        #   数据结构: cache = list[tuple(list, pre_entry)]
-        #   每到一个新事件，先不忙进dfs，先把每个cache的entry查了
-        #   {"dense_gid": (list, pre_entry)}
-        self.DENSE_CACHE:Dict[str, Dict[int, List[Event]]] = {} # {prev: {1: [], 2: [], 3: []}}
+        self.DENSE_CACHE:Dict[KGTreeNode, Dict[int, List[Event]]] = {} # {prev: {1: [], 2: [], 3: []}}
+        self.DENSE_LEAVES:Set[KGTreeNode] = set()
         # Dynamic but temporary, only live during one event's processing
         #   The stack top of `tid_dyn_stack` represents the current dynamic tid of the event being processed.
         #   You must reset it after or before one event's processing!!
@@ -79,6 +77,7 @@ class Worker:
         # FIX
         self.default_expired = 3
         self.expired_span = self.rule.max_span
+        self.default_dense_expired = 1
 
     def gen_tag2kg(self):
         for tag_node in self.rule.tag_nodes:
@@ -186,44 +185,57 @@ class Worker:
             if ind_y - leaf_seq_ind <= 1: return True
         return False
 
-    def liquidate_dense(self, time):
-        def checkout(time):
-            for prev in self.DENSE_CACHE:
-                for slot_ind in self.DENSE_CACHE[prev]:
-                    for event in self.DENSE_CACHE[prev][slot_ind]:
-                        if time > event.raw_event["time"]:  # if need to handler a slot
-                            is_all_here = True
-                            for i in range(self.SLOT_LEN_MAP[prev]):
-                                if i not in self.DENSE_CACHE[prev]:
-                                    is_all_here = False
-                                    break
-                            if not is_all_here:
-                                pass  # clean garbish
-                            else:
-                                yield prev
-                        break
-                    break
-        # 所以需要precheck一下：
-        # 应该先查最后一位的slot是否为空，如果空了直接扔掉了
-        # 然后遍历时只需要查递增就得了
-        for prev in checkout(time=time):
-            for slot_ind in range(self.SLOT_LEN_MAP[prev]):
-                for event in self.DENSE_CACHE[prev][slot_ind]:
-                    results_collected = self.process_dfs(entry=entry, inspected_event=event, root=entry)
-                    pass
-            # results_collected = self.process_dfs(entry=entry, inspected_event=event, root=entry)
-            pass
-
-    def join_new_leaf(self, entry:KGTreeNode, inspected_event, root:KGTreeNode) -> KGTreeNode:
-        node = self.new_event_node(event=self.new_event(inspected_event))
+    def join_new_leaf(self, entry:KGTreeNode, inspected_event:Dict|Event, root:KGTreeNode) -> KGTreeNode:
+        if not isinstance(inspected_event, Event):
+            node = self.new_event_node(event=self.new_event(inspected_event))
+        else:
+            node = self.new_event_node(event=inspected_event)
         entry.add_child(node=node)
         root.set_leaf(leaf=node)
         # UPDATE TIMESTAMP
         self.last_ts_cache = inspected_event["time"]
         return node
 
-    # 这个函数重构一下，返回的物理意义是叶子结点的集合
-    def process_dfs(self, entry:KGTreeNode, inspected_event, root:KGTreeNode) -> List[KGTreeNode]:
+    def liquidate_dense(self, time, root:KGTreeNode):
+        def checkout(time):
+            for prev in self.DENSE_CACHE:
+                for slot_ind in self.DENSE_CACHE[prev]:
+                    for event in self.DENSE_CACHE[prev][slot_ind]:
+                        if time - event.raw_event["time"] >= self.default_dense_expired:  # if need to handler a slot
+                            is_all_here = True
+                            for i in range(self.SLOT_LEN_MAP[self.EID_MAP[prev.eid].tid_dyn]):
+                                if i not in self.DENSE_CACHE[prev]:
+                                    is_all_here = False
+                                    break
+                            yield prev, is_all_here
+                        break
+                    break
+        done = []
+        results = []
+        # processing
+        for prev, is_all_here in checkout(time=time):
+            done.append(prev)
+            if not is_all_here: continue
+            head_nodes = [self.join_new_leaf(entry=prev, inspected_event=head_event) for head_event in self.DENSE_CACHE[prev][0]]
+            for head_n in head_nodes:
+                for slot_ind in range(1, self.SLOT_LEN_MAP[self.EID_MAP[prev.eid].tid_dyn]):
+                    for event in self.DENSE_CACHE[prev][slot_ind]:
+                        results_collected = self.process_dfs(entry=head_n, inspected_event=event, root=root, liquidate=True)
+                        results += results_collected
+        # clean dyn cache
+        for prev in done: del self.DENSE_CACHE[prev]
+        # clean useless nodes
+        dead_leaves = []
+        for leaf in self.DENSE_LEAVES:
+            leaf_tid_dyn = self.EID_MAP[leaf.eid].tid_dyn
+            leaf_prev_tid_dyn = self.FIND_DENSE_PREV[leaf_tid_dyn]
+            if self.DENSE_SHAPE_IND[leaf_tid_dyn] != self.SLOT_LEN_MAP[leaf_prev_tid_dyn] - 1:
+                dead_leaves.append(leaf)
+        self.prune_algorithm(entry=root, dead_leaves=dead_leaves)
+        self.DENSE_LEAVES = set()
+        return results
+
+    def process_dfs(self, entry:KGTreeNode, inspected_event, root:KGTreeNode, liquidate=False) -> List[KGTreeNode]:
         # results
         results:List[KGTreeNode] = []
         # checking
@@ -236,6 +248,9 @@ class Worker:
                 and self.check_constraint(inspector_node=entry, inspected_event=inspected_event):
                 # ALREADY IN POSITION, AND THIS IS THE END OF GAME
                 node = self.join_new_leaf(entry=entry, inspected_event=inspected_event, root=root)
+                if liquidate:
+                    if node.parent in self.DENSE_LEAVES: self.DENSE_LEAVES.remove(node.parent)
+                    self.DENSE_LEAVES.add(node)
                 # CHECK FINISH
                 if tid_y == self.FINAL_TID:
                     return [node]
@@ -243,13 +258,13 @@ class Worker:
             assert ind_y > ind_x
             if self.check_constraint(inspector_node=entry, inspected_event=inspected_event):
                 # check if meets the dense termial condition
-                if self.tid_dyn in self.FIND_DENSE_PREV \
-                    and self.check_time_order(inspector_node=entry, inspected_event=inspected_event):
-                    dense_prev = self.FIND_DENSE_PREV[self.tid_dyn]
-                    if dense_prev not in self.DENSE_CACHE: self.DENSE_CACHE[dense_prev] = {}
-                    if self.DENSE_SHAPE_IND[self.tid_dyn] not in self.DENSE_CACHE[dense_prev]:
-                        self.DENSE_CACHE[dense_prev][self.DENSE_SHAPE_IND[self.tid_dyn]] = []
-                    self.DENSE_CACHE[dense_prev][self.DENSE_SHAPE_IND[self.tid_dyn]].append(self.new_event(inspected_event))
+                if not liquidate and self.tid_dyn in self.FIND_DENSE_PREV \
+                      and self.FIND_DENSE_PREV[self.tid_dyn] == tid_x \
+                         and self.check_time_order(inspector_node=entry, inspected_event=inspected_event):
+                    if entry not in self.DENSE_CACHE: self.DENSE_CACHE[entry] = {}
+                    if self.DENSE_SHAPE_IND[self.tid_dyn] not in self.DENSE_CACHE[entry]:
+                        self.DENSE_CACHE[entry][self.DENSE_SHAPE_IND[self.tid_dyn]] = []
+                    self.DENSE_CACHE[entry][self.DENSE_SHAPE_IND[self.tid_dyn]].append(self.new_event(inspected_event))
                     return results
                 # continue checking
                 for child in entry.children:
@@ -274,8 +289,9 @@ class Worker:
                 self.tid_dyn = tid + '@' + str(i) if i != 0 else tid
                 if self.tid_dyn == self.ENTRY_TID: continue
                 if not self.precheck_has_position(root=entry): continue
-                self.liquidate_dense(event["time"])
-                terminal_leaves = self.process_dfs(entry=entry, inspected_event=event, root=entry)
+                terminal_leaves = []
+                terminal_leaves += self.liquidate_dense(event["time"], root=entry)
+                terminal_leaves += self.process_dfs(entry=entry, inspected_event=event, root=entry)
                 for leaf in terminal_leaves:
                     results_collected = self.fetch_results(leaf=leaf)
                     results.append(results_collected)
