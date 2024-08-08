@@ -213,6 +213,8 @@ class Worker:
 
     def liquidate_dense(self, time, root:KGTreeNode):
         def checkout(time):
+            # easy, easy...don't be shocked by the loops here.
+            # it's just a easy checkout. look at the `break` :)
             for prev in self.DENSE_CACHE:
                 for slot_ind in self.DENSE_CACHE[prev]:
                     for event in self.DENSE_CACHE[prev][slot_ind]:
