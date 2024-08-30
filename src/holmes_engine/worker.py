@@ -122,7 +122,8 @@ class Worker:
             dead_node = dead_leaf
             while len(dead_node.children) == 0:
                 if dead_node.parent is None:
-                    del self.EID_MAP[dead_node.eid]
+                    if self.EID_MAP[dead_node.eid].tid_dyn != "DENSE_BOOT":
+                        del self.EID_MAP[dead_node.eid]
                     break
                 p = dead_node.parent
                 dead_node.kill()
@@ -143,7 +144,8 @@ class Worker:
             if dead_leaves == []:
                 continue
             self.prune_algorithm(entry=root, dead_leaves=dead_leaves)
-            if root.eid in self.EID_MAP: assert self.EID_MAP[root.eid].tid_dyn == "DENSE_BOOT"
+            if len(root.children) == 0 and root.eid in self.EID_MAP:
+                assert self.EID_MAP[root.eid].tid_dyn == "DENSE_BOOT"
             if len(root.children) == 0 and root.eid not in self.EID_MAP:
                 self.tree_dead.append(root_ind)
         while self.tree_dead != []:
