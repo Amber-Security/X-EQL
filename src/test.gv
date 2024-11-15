@@ -1,0 +1,215 @@
+digraph G {
+concentrate=true;
+splines="ortho";
+rankdir="LR";
+subgraph legend{
+    rank = min;
+    label = "legend";
+    Legend [shape=none, margin=0, label = <
+        <table cellspacing="0" cellpadding="0" border="1"><tr><td>Code2flow Legend</td></tr><tr><td>
+        <table cellspacing="0">
+        <tr><td>Regular function</td><td width="50px" bgcolor='#cccccc'></td></tr>
+        <tr><td>Trunk function (nothing calls this)</td><td bgcolor='#966F33'></td></tr>
+        <tr><td>Leaf function (this calls nothing else)</td><td bgcolor='#6db33f'></td></tr>
+        <tr><td>Function call</td><td><font color='black'>&#8594;</font></td></tr>
+        </table></td></tr></table>
+        >];
+}node_cf644b0f [label="16: add_holmes_rule()" name="engine::Engine.add_holmes_rule" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_3092c227 [label="30: del_holmes_rule()" name="engine::Engine.del_holmes_rule" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_36d563d4 [label="50: process_event()" name="engine::Engine.process_event" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_23dae0c5 [label="38: update_holmes_rule()" name="engine::Engine.update_holmes_rule" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_3bb84908 [label="5: __init__()" name="event::Event.__init__" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_4110b5e3 [label="13: gen_kg_inc()" name="event::Event.gen_kg_inc" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_1ce73ba7 [label="5: __init__()" name="kgtree::KGTreeNode.__init__" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_70ac92d4 [label="28: add_child()" name="kgtree::KGTreeNode.add_child" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_333fa12c [label="12: kill()" name="kgtree::KGTreeNode.kill" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_a399effd [label="18: set_last_ts()" name="kgtree::KGTreeNode.set_last_ts" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_20dc3efb [label="22: set_leaf()" name="kgtree::KGTreeNode.set_leaf" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_edac1b6c [label="32: set_parent()" name="kgtree::KGTreeNode.set_parent" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_e28cb276 [label="6: __init__()" name="parser::Parser.__init__" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_e5c57d9f [label="9: parse()" name="parser::Parser.parse" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_ed9e70e1 [label="24: __init__()" name="rule::HolmesRule.__init__" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_99642ddf [label="5: __init__()" name="rule::KeyGroupBind.__init__" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_d49514b5 [label="17: __init__()" name="rule::TagNode.__init__" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_275e3363 [label="11: __init__()" name="rule::TagRule.__init__" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_30c1913d [label="31: gen_tag_node()" name="rule::gen_tag_node" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_450cb492 [label="39: load_rule()" name="rule::load_rule" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_89ce7930 [label="133: gen_parser()" name="syntax::gen_parser" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_439bdb08 [label="10: __init__()" name="worker::Worker.__init__" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_6214c7d0 [label="180: check_constraint()" name="worker::Worker.check_constraint" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_c88623c1 [label="174: check_time_order()" name="worker::Worker.check_time_order" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_9e49d2fb [label="298: fetch_results()" name="worker::Worker.fetch_results" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_2337580d [label="111: gen_kg_conjugate()" name="worker::Worker.gen_kg_conjugate" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_703cd551 [label="100: gen_kg_inc()" name="worker::Worker.gen_kg_inc" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_12688d37 [label="93: gen_tag2kg()" name="worker::Worker.gen_tag2kg" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_cfcd3897 [label="133: is_dead_leaf()" name="worker::Worker.is_dead_leaf" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_a21bd452 [label="307: is_start_event()" name="worker::Worker.is_start_event" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_9e143680 [label="205: join_new_leaf()" name="worker::Worker.join_new_leaf" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_c602a23f [label="216: liquidate_dense()" name="worker::Worker.liquidate_dense" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_49107e70 [label="168: new_entry()" name="worker::Worker.new_entry" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_62b573bc [label="155: new_event()" name="worker::Worker.new_event" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_847ba293 [label="164: new_event_node()" name="worker::Worker.new_event_node" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_c5f3d3d0 [label="193: precheck_has_position()" name="worker::Worker.precheck_has_position" shape="rect" style="rounded,filled" fillcolor="#6db33f" ];
+node_0d9be52d [label="261: process_dfs()" name="worker::Worker.process_dfs" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_a2e138dd [label="310: process_event()" name="worker::Worker.process_event" shape="rect" style="rounded,filled" fillcolor="#966F33" ];
+node_159e712a [label="141: prune()" name="worker::Worker.prune" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_956b8897 [label="119: prune_algorithm()" name="worker::Worker.prune_algorithm" shape="rect" style="rounded,filled" fillcolor="#cccccc" ];
+node_cf644b0f -> node_439bdb08 [color="#CC79A7" penwidth="2"];
+node_36d563d4 -> node_159e712a [color="#F0E442" penwidth="2"];
+node_23dae0c5 -> node_cf644b0f [color="#0072B2" penwidth="2"];
+node_23dae0c5 -> node_3092c227 [color="#0072B2" penwidth="2"];
+node_3bb84908 -> node_4110b5e3 [color="#000000" penwidth="2"];
+node_70ac92d4 -> node_edac1b6c [color="#F0E442" penwidth="2"];
+node_e28cb276 -> node_89ce7930 [color="#D55E00" penwidth="2"];
+node_e5c57d9f -> node_e5c57d9f [color="#CC79A7" penwidth="2"];
+node_30c1913d -> node_99642ddf [color="#0072B2" penwidth="2"];
+node_30c1913d -> node_d49514b5 [color="#0072B2" penwidth="2"];
+node_30c1913d -> node_275e3363 [color="#0072B2" penwidth="2"];
+node_450cb492 -> node_ed9e70e1 [color="#56B4E9" penwidth="2"];
+node_450cb492 -> node_99642ddf [color="#56B4E9" penwidth="2"];
+node_450cb492 -> node_30c1913d [color="#56B4E9" penwidth="2"];
+node_450cb492 -> node_30c1913d [color="#56B4E9" penwidth="2"];
+node_439bdb08 -> node_2337580d [color="#000000" penwidth="2"];
+node_439bdb08 -> node_703cd551 [color="#000000" penwidth="2"];
+node_439bdb08 -> node_12688d37 [color="#000000" penwidth="2"];
+node_439bdb08 -> node_49107e70 [color="#000000" penwidth="2"];
+node_9e143680 -> node_70ac92d4 [color="#000000" penwidth="2"];
+node_9e143680 -> node_20dc3efb [color="#000000" penwidth="2"];
+node_9e143680 -> node_62b573bc [color="#000000" penwidth="2"];
+node_9e143680 -> node_847ba293 [color="#000000" penwidth="2"];
+node_9e143680 -> node_847ba293 [color="#000000" penwidth="2"];
+node_c602a23f -> node_9e143680 [color="#CC79A7" penwidth="2"];
+node_c602a23f -> node_0d9be52d [color="#CC79A7" penwidth="2"];
+node_c602a23f -> node_956b8897 [color="#CC79A7" penwidth="2"];
+node_49107e70 -> node_a399effd [color="#000000" penwidth="2"];
+node_49107e70 -> node_20dc3efb [color="#000000" penwidth="2"];
+node_49107e70 -> node_62b573bc [color="#000000" penwidth="2"];
+node_49107e70 -> node_847ba293 [color="#000000" penwidth="2"];
+node_62b573bc -> node_3bb84908 [color="#F0E442" penwidth="2"];
+node_847ba293 -> node_1ce73ba7 [color="#009E73" penwidth="2"];
+node_0d9be52d -> node_6214c7d0 [color="#0072B2" penwidth="2"];
+node_0d9be52d -> node_6214c7d0 [color="#0072B2" penwidth="2"];
+node_0d9be52d -> node_c88623c1 [color="#0072B2" penwidth="2"];
+node_0d9be52d -> node_c88623c1 [color="#0072B2" penwidth="2"];
+node_0d9be52d -> node_9e143680 [color="#0072B2" penwidth="2"];
+node_0d9be52d -> node_62b573bc [color="#0072B2" penwidth="2"];
+node_0d9be52d -> node_0d9be52d [color="#0072B2" penwidth="2"];
+node_a2e138dd -> node_a399effd [color="#0072B2" penwidth="2"];
+node_a2e138dd -> node_9e49d2fb [color="#0072B2" penwidth="2"];
+node_a2e138dd -> node_a21bd452 [color="#0072B2" penwidth="2"];
+node_a2e138dd -> node_a21bd452 [color="#0072B2" penwidth="2"];
+node_a2e138dd -> node_c602a23f [color="#0072B2" penwidth="2"];
+node_a2e138dd -> node_49107e70 [color="#0072B2" penwidth="2"];
+node_a2e138dd -> node_c5f3d3d0 [color="#0072B2" penwidth="2"];
+node_a2e138dd -> node_0d9be52d [color="#0072B2" penwidth="2"];
+node_159e712a -> node_cfcd3897 [color="#56B4E9" penwidth="2"];
+node_159e712a -> node_956b8897 [color="#56B4E9" penwidth="2"];
+node_956b8897 -> node_333fa12c [color="#CC79A7" penwidth="2"];
+subgraph cluster_22c8f86d {
+    label="File: engine";
+    name="engine";
+    style="filled";
+    graph[style=dotted];
+    subgraph cluster_111656a7 {
+        node_cf644b0f node_3092c227 node_23dae0c5 node_36d563d4;
+        label="Class: Engine";
+        name="Engine";
+        style="filled";
+        graph[style=dotted];
+    };
+};
+subgraph cluster_f0faae9d {
+    label="File: event";
+    name="event";
+    style="filled";
+    graph[style=dotted];
+    subgraph cluster_f5659f4a {
+        node_3bb84908 node_4110b5e3;
+        label="Class: Event";
+        name="Event";
+        style="filled";
+        graph[style=dotted];
+    };
+};
+subgraph cluster_29eca0b2 {
+    label="File: kgtree";
+    name="kgtree";
+    style="filled";
+    graph[style=dotted];
+    subgraph cluster_bbf2e818 {
+        node_1ce73ba7 node_333fa12c node_a399effd node_20dc3efb node_70ac92d4 node_edac1b6c;
+        label="Class: KGTreeNode";
+        name="KGTreeNode";
+        style="filled";
+        graph[style=dotted];
+    };
+};
+subgraph cluster_e7a59a28 {
+    label="File: parser";
+    name="parser";
+    style="filled";
+    graph[style=dotted];
+    subgraph cluster_f9d4973e {
+        node_e28cb276 node_e5c57d9f;
+        label="Class: Parser";
+        name="Parser";
+        style="filled";
+        graph[style=dotted];
+    };
+};
+subgraph cluster_02c5c1a9 {
+    node_30c1913d node_450cb492;
+    label="File: rule";
+    name="rule";
+    style="filled";
+    graph[style=dotted];
+    subgraph cluster_193e05f4 {
+        node_99642ddf;
+        label="Class: KeyGroupBind";
+        name="KeyGroupBind";
+        style="filled";
+        graph[style=dotted];
+    };
+    subgraph cluster_1768e984 {
+        node_275e3363;
+        label="Class: TagRule";
+        name="TagRule";
+        style="filled";
+        graph[style=dotted];
+    };
+    subgraph cluster_cb2f16ee {
+        node_d49514b5;
+        label="Class: TagNode";
+        name="TagNode";
+        style="filled";
+        graph[style=dotted];
+    };
+    subgraph cluster_22498770 {
+        node_ed9e70e1;
+        label="Class: HolmesRule";
+        name="HolmesRule";
+        style="filled";
+        graph[style=dotted];
+    };
+};
+subgraph cluster_e162438a {
+    node_89ce7930;
+    label="File: syntax";
+    name="syntax";
+    style="filled";
+    graph[style=dotted];
+};
+subgraph cluster_3054f5fd {
+    label="File: worker";
+    name="worker";
+    style="filled";
+    graph[style=dotted];
+    subgraph cluster_3a7307c5 {
+        node_439bdb08 node_12688d37 node_703cd551 node_2337580d node_956b8897 node_cfcd3897 node_159e712a node_62b573bc node_847ba293 node_49107e70 node_c88623c1 node_6214c7d0 node_c5f3d3d0 node_9e143680 node_c602a23f node_0d9be52d node_9e49d2fb node_a21bd452 node_a2e138dd;
+        label="Class: Worker";
+        name="Worker";
+        style="filled";
+        graph[style=dotted];
+    };
+};
+}
